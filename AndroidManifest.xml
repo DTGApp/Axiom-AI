@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Project Axiom — AndroidManifest.xml
+    All permissions documented with rationale for Google Play compliance.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- ── Permissions ────────────────────────────────────────────────────────
+         Runtime permissions (marked *) are requested in MainActivity with
+         rationale dialogs. Special permissions require manual user action.
+    ──────────────────────────────────────────────────────────────────────── -->
+
+    <!-- Internet: used ONLY to download the seed model file on first install.
+         No user data is ever sent. Download is one-way, user-initiated. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Query installed packages: needed to resolve app launch intents -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission" />
+
+    <!-- Voice input: RECORD_AUDIO for mic button in MainActivity * -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- Ringer / volume control: PhoneModeManager switches ringer mode -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+
+    <!-- Calendar read: LifeContextAssistant reads upcoming events for context -->
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+
+    <!-- Media: file search feature browses on-device media -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <!-- Legacy storage read for API ≤ 32 -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+
+    <!-- WiFi state: checks if device is on WiFi (sensor input for inference).
+         Never reads network content or traffic. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- Notifications: required at RUNTIME on Android 13+ (API 33+). * -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Required to call ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS (Doze whitelist) -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+    <!-- Bluetooth state: checks if BT is enabled (sensor input for inference).
+         BLUETOOTH covers API ≤ 30; BLUETOOTH_CONNECT required for API 31+.
+         Neither reads device names, pairing data, or content. * (API 31+) -->
+    <uses-permission android:name="android.permission.BLUETOOTH"
+        android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"
+        android:minSdkVersion="31" />
+
+    <!-- Usage stats: reads which apps the user opens (mapped to intent
+         categories, never stored off-device). Special permission — user
+         grants manually in Settings > Special App Access > Usage Access. -->
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
+
+    <!-- DND policy access: PhoneModeManager requests this at runtime via
+         NotificationManager.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS. -->
+
+    <!-- Background and service permissions -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+
+    <!-- Battery state: reads charge level and charging status (sensor inputs) -->
+    <uses-permission android:name="android.permission.BATTERY_STATS"
+        tools:ignore="ProtectedPermissions" />
+
+
+    <!-- ── Application ────────────────────────────────────────────────────── -->
+    <application
+        android:label="@string/app_name"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:theme="@style/Theme.AxiomNew"
+        android:allowBackup="false">
+
+        <!-- ── Activities ──────────────────────────────────────────────────── -->
+
+        <!-- MainActivity: launcher, UI shell, permission flow, seed download -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|keyboard|smallestScreenSize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- OnboardingActivity: shown once on first launch -->
+        <activity
+            android:name=".OnboardingActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- AxiomProfileActivity: "What Axiom Knows" — learning stats, habits -->
+        <activity
+            android:name=".AxiomProfileActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".MainActivity" />
+
+        <!-- InsightActivity: Battery Doctor + Weekly Insight + Phone Mode hub -->
+        <activity
+            android:name=".InsightActivity"
+            android:exported="false"
+            android:label="Axiom Intelligence"
+            android:configChanges="orientation|screenSize"
+            android:parentActivityName=".MainActivity" />
+
+        <!-- AiDetectorActivity: AI content detection tool -->
+        <activity
+            android:name=".AiDetectorActivity"
+            android:exported="false"
+            android:label="AI Content Detector"
+            android:parentActivityName=".MainActivity" />
+
+        <!-- FileSearchActivity: on-device file search -->
+        <activity
+            android:name=".FileSearchActivity"
+            android:exported="false"
+            android:label="File Search"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:parentActivityName=".MainActivity" />
+
+        <!-- EventViewerActivity: inference log, adapter stats, usage data -->
+        <activity
+            android:name=".EventViewerActivity"
+            android:exported="false"
+            android:label="Axiom Event Viewer"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
+            android:parentActivityName=".MainActivity" />
+
+        <!-- HealthCheckActivity: module-by-module diagnostic of all on-device files
+             and SharedPreferences. Accessible via three-dots menu. -->
+        <activity
+            android:name=".HealthCheckActivity"
+            android:exported="false"
+            android:label="Axiom Health Check"
+            android:configChanges="orientation|screenSize"
+            android:parentActivityName=".MainActivity" />
+
+
+        <!-- ── Services ────────────────────────────────────────────────────── -->
+
+        <!-- AxiomService: always-on foreground service — owns LLM engine,
+             sensor loop (5 min), proactive check (15 min), usage scan.
+             START_STICKY + BOOT_COMPLETED + stopWithTask=false = never dies. -->
+        <service
+            android:name=".AxiomService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync"
+            android:stopWithTask="false" />
+
+        <!-- DreamService: constants + notification channel used by AxiomService.startDreamCycle().
+             Foreground service so it survives while screen is off. -->
+        <service
+            android:name=".DreamService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
+
+        <!-- ── Broadcast Receivers ──────────────────────────────────────────── -->
+
+        <!-- ChargingReceiver: triggers dream cycle when charger connected + battery >= 50%.
+             Also handles BOOT_COMPLETED, daily and weekly usage scan alarms.
+             exported=true required for system broadcasts (POWER_CONNECTED, BOOT). -->
+        <receiver
+            android:name=".ChargingReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.POWER_CONNECTED" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="com.axiom.axiomnew.DEFERRED_DREAM" />
+                <action android:name="com.axiom.axiomnew.DAILY_USAGE_SCAN" />
+                <action android:name="com.axiom.axiomnew.WEEKLY_DEEP_SCAN" />
+            </intent-filter>
+        </receiver>
+
+        <!-- DreamReceiver: kept for manual adb test trigger only.
+             adb shell am broadcast -n com.axiom.axiomnew/.DreamReceiver -->
+        <receiver
+            android:name=".DreamReceiver"
+            android:exported="false" />
+
+        <!-- NotifTapReceiver: handles notification taps -> opens app/settings.
+             Swipe-dismiss registers reject feedback with the adapter. -->
+        <receiver
+            android:name=".NotifTapReceiver"
+            android:exported="false" />
+
+        <!-- ModeCancelReceiver: handles "Never today" on mode notifications.
+             Suppresses automatic mode switching until midnight. -->
+        <receiver
+            android:name=".ModeCancelReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.axiom.axiomnew.ACTION_CANCEL_MODE" />
+            </intent-filter>
+        </receiver>
+
+        <!-- ModeConfirmReceiver: handles "Yes, switch" / "Not now" on mode
+             notifications. Only confirmed actions change ringer/volume. -->
+        <receiver
+            android:name=".ModeConfirmReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.axiom.axiomnew.ACTION_CONFIRM_MODE" />
+                <action android:name="com.axiom.axiomnew.ACTION_SKIP_MODE" />
+            </intent-filter>
+        </receiver>
+
+    </application>
+</manifest>
