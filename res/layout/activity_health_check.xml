@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#080B14"
+    android:fillViewport="true"
+    android:scrollbars="none"
+    android:fitsSystemWindows="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="0dp"
+        android:paddingBottom="40dp">
+
+        <!-- Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="4dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="System Health"
+                android:textSize="19sp"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="#FFFFFF"
+                android:letterSpacing="0.01" />
+
+            <TextView
+                android:id="@+id/btnRefreshHealth"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="↻  Refresh"
+                android:textSize="13sp"
+                android:textColor="#00C8FF"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
+                android:background="@drawable/bg_chip"
+                android:clickable="true"
+                android:focusable="true" />
+
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#111D2A"
+            android:layout_marginBottom="4dp" />
+
+        <!-- Last checked timestamp -->
+        <TextView
+            android:id="@+id/tvHealthTimestamp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Checking…"
+            android:textSize="12sp"
+            android:textColor="#3F5975"
+            android:gravity="end"
+            android:paddingEnd="4dp"
+            android:layout_marginBottom="16dp" />
+
+        <!-- ── SECTION: CORE ENGINE ──────────────────────────────────────── -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="CORE ENGINE"
+            android:textSize="11sp"
+            android:textColor="#3F5975"
+            android:letterSpacing="0.12"
+            android:layout_marginBottom="8dp"
+            android:paddingStart="2dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_card"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:layout_marginBottom="16dp">
+
+            <!-- LLM Model file -->
+            <include layout="@layout/item_health_row"
+                android:id="@+id/rowModel" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="#0D1825" />
+
+            <!-- Engine ready (derived from model present + service running) -->
+            <include layout="@layout/item_health_row"
+                android:id="@+id/rowEngine" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="#0D1825" />
+
+            <!-- Native lib loaded -->
+            <include layout="@layout/item_health_row"
+                android:id="@+id/rowNativeLib" />
+
+        </LinearLayout>
+
+        <!-- ── SECTION: LEARNING PIPELINE ──────────────────────────────── -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="LEARNING PIPELINE"
+            android:textSize="11sp"
+            android:textColor="#3F5975"
+            android:letterSpacing="0.12"
+            android:layout_marginBottom="8dp"
+            android:paddingStart="2dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_card"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:layout_marginBottom="16dp">
+
+            <!-- Events log -->
+            <include layout="@layout/item_health_row"
+                android:id="@+id/rowEvents" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="#0D1825" />
+
+            <!-- MLP Adapter -->
+            <include layout="@layout/item_health_row"
+                android:id="@+id/rowAdapter" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="#0D1825" />
+
+            <!-- Predictions table -->
+            <include layout="@layout/item_health_row"
+                android:id="@+id/rowPreds" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="#0D1825" />
+
+            <!-- Usage scan -->
+            <include layout="@layout/item_health_row"
+                android:id="@+id/rowUsageScan" />
+
+        </LinearLayout>
+
+        <!-- ── SECTION: DREAM CYCLE ─────────────────────────────────────── -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="DREAM CYCLE"
+            android:textSize="11sp"
+            android:textColor="#3F5975"
+            android:letterSpacing="0.12"
+            android:layout_marginBottom="8dp"
+            android:paddingStart="2dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_card"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:layout_marginBottom="16dp">
+
+            <!-- Dream state -->
+            <include layout="@layout/item_health_row"
+                android:id="@+id/rowDreamState" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="#0D1825" />
+
+            <!-- Last dream ran -->
+            <include layout="@layout/item_health_row"
+                android:id="@+id/rowLastDream" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="#0D1825" />
+
+            <!-- Dream summary file -->
+            <include layout="@layout/item_health_row"
+                android:id="@+id/rowDreamSummary" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="#0D1825" />
+
+            <!-- Dream data file -->
+            <include layout="@layout/item_health_row"
+                android:id="@+id/rowDreamData" />
+
+        </LinearLayout>
+
+        <!-- ── SECTION: INTELLIGENCE ────────────────────────────────────── -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="INTELLIGENCE"
+            android:textSize="11sp"
+            android:textColor="#3F5975"
+            android:letterSpacing="0.12"
+            android:layout_marginBottom="8dp"
+            android:paddingStart="2dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_card"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:layout_marginBottom="16dp">
+
+            <!-- Weekly insight -->
+            <include layout="@layout/item_health_row"
+                android:id="@+id/rowInsight" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="#0D1825" />
+
+            <!-- Phone mode manager -->
+            <include layout="@layout/item_health_row"
+                android:id="@+id/rowMode" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="#0D1825" />
+
+            <!-- Life context assistant -->
+            <include layout="@layout/item_health_row"
+                android:id="@+id/rowLifeContext" />
+
+        </LinearLayout>
+
+        <!-- ── SECTION: APP STATE ───────────────────────────────────────── -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="APP STATE"
+            android:textSize="11sp"
+            android:textColor="#3F5975"
+            android:letterSpacing="0.12"
+            android:layout_marginBottom="8dp"
+            android:paddingStart="2dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_card"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:layout_marginBottom="16dp">
+
+            <!-- Onboarding -->
+            <include layout="@layout/item_health_row"
+                android:id="@+id/rowOnboarding" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="#0D1825" />
+
+            <!-- Milestones -->
+            <include layout="@layout/item_health_row"
+                android:id="@+id/rowMilestones" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="#0D1825" />
+
+            <!-- Install age -->
+            <include layout="@layout/item_health_row"
+                android:id="@+id/rowInstallAge" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="#0D1825" />
+
+            <!-- Free storage -->
+            <include layout="@layout/item_health_row"
+                android:id="@+id/rowStorage" />
+
+        </LinearLayout>
+
+        <!-- Footer -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="All data read from on-device files and preferences · Nothing sent anywhere"
+            android:textSize="12sp"
+            android:textColor="#3F5975"
+            android:gravity="center"
+            android:lineSpacingMultiplier="1.4"
+            android:layout_marginTop="4dp" />
+
+    </LinearLayout>
+
+</ScrollView>

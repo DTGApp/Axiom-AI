@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Reusable row for a single health-check item.
+     Used via <include> in activity_health_check.xml.
+     Programmatically populated by HealthCheckActivity.bind(). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingTop="13dp"
+    android:paddingBottom="13dp">
+
+    <!-- Status dot: green / amber / red -->
+    <View
+        android:id="@+id/viewRowDot"
+        android:layout_width="8dp"
+        android:layout_height="8dp"
+        android:background="@drawable/bg_dot"
+        android:layout_marginEnd="12dp" />
+
+    <!-- Label + detail stacked -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvRowLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Module name"
+            android:textSize="14sp"
+            android:fontFamily="sans-serif-medium"
+            android:textColor="#C8D8E8" />
+
+        <TextView
+            android:id="@+id/tvRowDetail"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="—"
+            android:textSize="12sp"
+            android:textColor="#5F7D9C"
+            android:layout_marginTop="2dp" />
+
+    </LinearLayout>
+
+    <!-- Right-hand value / badge -->
+    <TextView
+        android:id="@+id/tvRowValue"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="—"
+        android:textSize="12sp"
+        android:fontFamily="sans-serif-medium"
+        android:textColor="#9AAEB9"
+        android:maxWidth="120dp"
+        android:gravity="end"
+        android:ellipsize="end"
+        android:maxLines="2"
+        android:paddingStart="8dp" />
+
+</LinearLayout>

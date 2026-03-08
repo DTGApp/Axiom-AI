@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Axiom launcher foreground — adaptive icon foreground layer
+    Design: bold "A" letterform in #00C8FF (Axiom cyan) with three
+    white neural-node dots at the apex and both feet.
+    The three dots suggest a neural network / intelligence theme.
+    Drawn in the 108dp safe-zone with ~14dp padding all round.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- ── Left leg of A ─────────────────────────────────────────────────── -->
+    <path
+        android:fillColor="#00C8FF"
+        android:pathData="M54,15 L21,88 L29,88 L54,27 Z" />
+
+    <!-- ── Right leg of A ────────────────────────────────────────────────── -->
+    <path
+        android:fillColor="#00C8FF"
+        android:pathData="M54,15 L87,88 L79,88 L54,27 Z" />
+
+    <!-- ── Crossbar ───────────────────────────────────────────────────────── -->
+    <path
+        android:fillColor="#00C8FF"
+        android:pathData="M35,59 L73,59 L73,67 L35,67 Z" />
+
+    <!-- ── Neural dot glow — apex ─────────────────────────────────────────── -->
+    <path
+        android:fillColor="#1A00C8FF"
+        android:pathData="M54,4 a11,11 0 1 0 0.01,0 Z" />
+    <!-- ── Neural dot core — apex ─────────────────────────────────────────── -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,8 a7,7 0 1 0 0.01,0 Z" />
+
+    <!-- ── Neural dot glow — left foot ───────────────────────────────────── -->
+    <path
+        android:fillColor="#1A00C8FF"
+        android:pathData="M21,77 a11,11 0 1 0 0.01,0 Z" />
+    <!-- ── Neural dot core — left foot ───────────────────────────────────── -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M21,81 a7,7 0 1 0 0.01,0 Z" />
+
+    <!-- ── Neural dot glow — right foot ──────────────────────────────────── -->
+    <path
+        android:fillColor="#1A00C8FF"
+        android:pathData="M87,77 a11,11 0 1 0 0.01,0 Z" />
+    <!-- ── Neural dot core — right foot ──────────────────────────────────── -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M87,81 a7,7 0 1 0 0.01,0 Z" />
+
+</vector>
