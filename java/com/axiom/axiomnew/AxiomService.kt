@@ -1,6 +1,6 @@
 /*
  * Axiom — On-Device AI Assistant for Android
- * Copyright (C) 2024 [Your Name]
+ * Copyright (C) 2024 Rayad
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -21,10 +21,13 @@ package com.axiom.axiomnew
 import android.app.*
 import android.bluetooth.BluetoothManager
 import android.content.*
+import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.net.Uri
 import android.os.*
+import android.util.Log
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
@@ -104,6 +107,16 @@ class AxiomService : Service() {
 
     private val handler = Handler(Looper.getMainLooper())
 
+    /**
+     * MIUI / HyperOS enforces Android 10+ background activity launch restrictions
+     * aggressively — startActivity() called from a background thread (like infer())
+     * is silently blocked. This helper always posts to the main thread handler,
+     * making every activity launch safe from any thread.
+     */
+    private fun startActivityOnMain(intent: Intent) {
+        handler.post { runCatching { startActivity(intent) } }
+    }
+
     // ── v0.4 intelligence engines ──────────────────────────────────────────────
     private lateinit var batteryDoctor:    BatteryDoctor
     private lateinit var insightEngine:    InsightEngine
@@ -131,7 +144,7 @@ class AxiomService : Service() {
         fileSearchEngine     = FileSearchEngine(this)
         AppIntentRegistry.init(this)
         registerChargingReceiver()   // MIUI-safe: context receiver beats manifest receiver
-        android.util.Log.i(TAG, "AxiomService created — loading engine")
+        Log.i(TAG, "AxiomService created — loading engine")
         initEngineAsync()
     }
 
@@ -148,34 +161,34 @@ class AxiomService : Service() {
             AxiomEngine.shutdownAxiomEngine()
             engineReady = false
         }
-        android.util.Log.i(TAG, "AxiomService destroyed — scheduling hard restart")
+        Log.i(TAG, "AxiomService destroyed — scheduling hard restart")
         scheduleRestart()
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
         super.onTaskRemoved(rootIntent)
-        android.util.Log.i(TAG, "onTaskRemoved — scheduling restart")
+        Log.i(TAG, "onTaskRemoved — scheduling restart")
         scheduleRestart()
     }
 
     private fun scheduleRestart() {
         runCatching {
-            val pi = android.app.PendingIntent.getBroadcast(
+            val pi = PendingIntent.getBroadcast(
                 this, 999,
                 Intent(this, ServiceRestartReceiver::class.java),
-                android.app.PendingIntent.FLAG_UPDATE_CURRENT or
-                        android.app.PendingIntent.FLAG_IMMUTABLE
+                PendingIntent.FLAG_UPDATE_CURRENT or
+                        PendingIntent.FLAG_IMMUTABLE
             )
-            val am = getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+            val am = getSystemService(Context.ALARM_SERVICE) as AlarmManager
             val triggerMs = System.currentTimeMillis() + 5_000L
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-                am.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, triggerMs, pi)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerMs, pi)
             } else {
-                am.set(android.app.AlarmManager.RTC_WAKEUP, triggerMs, pi)
+                am.set(AlarmManager.RTC_WAKEUP, triggerMs, pi)
             }
-            android.util.Log.i(TAG, "Restart alarm set for 5s from now")
+            Log.i(TAG, "Restart alarm set for 5s from now")
         }.onFailure {
-            android.util.Log.e(TAG, "scheduleRestart failed: ${it.message}")
+            Log.e(TAG, "scheduleRestart failed: ${it.message}")
         }
     }
 
@@ -187,7 +200,7 @@ class AxiomService : Service() {
             try {
                 val modelFile = File(filesDir, "axiom_seed_q4.gguf")
                 if (!modelFile.exists()) {
-                    android.util.Log.w(TAG, "Model not copied yet — retry in 30 s")
+                    Log.w(TAG, "Model not copied yet — retry in 30 s")
                     handler.postDelayed({ initEngineAsync() }, 30_000L)
                     return@Thread
                 }
@@ -200,7 +213,7 @@ class AxiomService : Service() {
                 )
                 engineReady = ok
                 AxiomEngine.ready = ok
-                android.util.Log.i(TAG, "Engine init: ok=$ok")
+                Log.i(TAG, "Engine init: ok=$ok")
 
                 // Replay feedback queued while engine was down
                 val pending = File(filesDir, NotifTapReceiver.PENDING_FB_FILE)
@@ -208,7 +221,7 @@ class AxiomService : Service() {
                     val n = AxiomEngine.replayPendingFeedback(pending.absolutePath)
                     if (n > 0) {
                         pending.delete()
-                        android.util.Log.i(TAG, "Replayed $n pending feedback events")
+                        Log.i(TAG, "Replayed $n pending feedback events")
                     }
                 }
 
@@ -222,7 +235,7 @@ class AxiomService : Service() {
                 updateServiceNotif()
 
             } catch (e: Exception) {
-                android.util.Log.e(TAG, "Engine init exception: ${e.message}")
+                Log.e(TAG, "Engine init exception: ${e.message}")
                 handler.postDelayed({ initEngineAsync() }, 60_000L)
             }
         }.start()
@@ -232,47 +245,47 @@ class AxiomService : Service() {
     // Registered in onCreate so MIUI cannot block it. POWER_CONNECTED via the
     // manifest ChargingReceiver is silently dropped on MIUI 14+ for non-system
     // apps. A context-registered receiver inside the running service always fires.
-    private var chargingReceiver: android.content.BroadcastReceiver? = null
+    private var chargingReceiver: BroadcastReceiver? = null
 
     private fun registerChargingReceiver() {
         if (chargingReceiver != null) return
-        chargingReceiver = object : android.content.BroadcastReceiver() {
-            override fun onReceive(ctx: android.content.Context, intent: android.content.Intent) {
+        chargingReceiver = object : BroadcastReceiver() {
+            override fun onReceive(ctx: Context, intent: Intent) {
                 when (intent.action) {
-                    android.content.Intent.ACTION_POWER_CONNECTED -> {
+                    Intent.ACTION_POWER_CONNECTED -> {
                         // Re-read battery from sticky broadcast.
                         // MIUI BUG: EXTRA_PLUGGED returns 0 even when charger is connected
                         // (seen on HyperOS / MIUI 14 with battery > 55%). Always also check
                         // EXTRA_STATUS — MIUI does NOT lie about that field.
-                        val bs      = registerReceiver(null, android.content.IntentFilter(
-                            android.content.Intent.ACTION_BATTERY_CHANGED))
-                        val plugged = bs?.getIntExtra(android.os.BatteryManager.EXTRA_PLUGGED, 0) ?: 0
-                        val status  = bs?.getIntExtra(android.os.BatteryManager.EXTRA_STATUS,  -1) ?: -1
-                        val pct     = bs?.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL,    0) ?: 0
+                        val bs      = registerReceiver(null, IntentFilter(
+                            Intent.ACTION_BATTERY_CHANGED))
+                        val plugged = bs?.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) ?: 0
+                        val status  = bs?.getIntExtra(BatteryManager.EXTRA_STATUS,  -1) ?: -1
+                        val pct     = bs?.getIntExtra(BatteryManager.EXTRA_LEVEL,    0) ?: 0
                         // POWER_CONNECTED fired → charger is physically connected regardless of what
                         // EXTRA_PLUGGED says. Trust the intent action over the sticky broadcast field.
                         val isCharging = plugged > 0 ||
-                                status == android.os.BatteryManager.BATTERY_STATUS_CHARGING ||
-                                status == android.os.BatteryManager.BATTERY_STATUS_FULL ||
-                                intent.action == android.content.Intent.ACTION_POWER_CONNECTED  // always true here
-                        android.util.Log.i(TAG,
+                                status == BatteryManager.BATTERY_STATUS_CHARGING ||
+                                status == BatteryManager.BATTERY_STATUS_FULL ||
+                                intent.action == Intent.ACTION_POWER_CONNECTED  // always true here
+                        Log.i(TAG,
                             "In-service POWER_CONNECTED: plugged=$plugged status=$status bat=$pct% → charging=$isCharging")
                         if (pct >= 20) {   // POWER_CONNECTED already proves charger is present
                             maybeTriggerDream()
                         }
                     }
-                    android.content.Intent.ACTION_POWER_DISCONNECTED -> {
-                        android.util.Log.i(TAG, "In-service POWER_DISCONNECTED")
+                    Intent.ACTION_POWER_DISCONNECTED -> {
+                        Log.i(TAG, "In-service POWER_DISCONNECTED")
                     }
                 }
             }
         }
-        val filter = android.content.IntentFilter().apply {
-            addAction(android.content.Intent.ACTION_POWER_CONNECTED)
-            addAction(android.content.Intent.ACTION_POWER_DISCONNECTED)
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_POWER_CONNECTED)
+            addAction(Intent.ACTION_POWER_DISCONNECTED)
         }
         registerReceiver(chargingReceiver, filter)
-        android.util.Log.i(TAG, "In-service charging receiver registered")
+        Log.i(TAG, "In-service charging receiver registered")
     }
 
     private fun unregisterChargingReceiver() {
@@ -298,14 +311,14 @@ class AxiomService : Service() {
             // MIUI enters trickle-charge mode and doesn't mark it as "charging".
             // Fix: read the sticky ACTION_BATTERY_CHANGED broadcast directly —
             // it always carries the correct plugged/status fields regardless of MIUI quirks.
-            val batteryStatus: android.content.Intent? =
-                registerReceiver(null, android.content.IntentFilter(
-                    android.content.Intent.ACTION_BATTERY_CHANGED))
-            val plugged   = batteryStatus?.getIntExtra(android.os.BatteryManager.EXTRA_PLUGGED, -1) ?: -1
-            val status    = batteryStatus?.getIntExtra(android.os.BatteryManager.EXTRA_STATUS, -1) ?: -1
+            val batteryStatus: Intent? =
+                registerReceiver(null, IntentFilter(
+                    Intent.ACTION_BATTERY_CHANGED))
+            val plugged   = batteryStatus?.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1) ?: -1
+            val status    = batteryStatus?.getIntExtra(BatteryManager.EXTRA_STATUS, -1) ?: -1
             val charging  = plugged > 0 ||
-                    status == android.os.BatteryManager.BATTERY_STATUS_CHARGING ||
-                    status == android.os.BatteryManager.BATTERY_STATUS_FULL
+                    status == BatteryManager.BATTERY_STATUS_CHARGING ||
+                    status == BatteryManager.BATTERY_STATUS_FULL
 
             val wifi = runCatching {
                 val cm = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -334,7 +347,7 @@ class AxiomService : Service() {
 
             // Read current media volume as percentage (0-100). -1 = unknown.
             val volumePct = runCatching {
-                val am = getSystemService(android.content.Context.AUDIO_SERVICE)
+                val am = getSystemService(Context.AUDIO_SERVICE)
                         as android.media.AudioManager
                 val cur = am.getStreamVolume(android.media.AudioManager.STREAM_MUSIC)
                 val max = am.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC)
@@ -343,7 +356,7 @@ class AxiomService : Service() {
 
             // Read ringer mode: 0=silent, 1=vibrate, 2=normal
             val ringerMode = runCatching {
-                val am = getSystemService(android.content.Context.AUDIO_SERVICE)
+                val am = getSystemService(Context.AUDIO_SERVICE)
                         as android.media.AudioManager
                 am.ringerMode  // AudioManager.RINGER_MODE_*
             }.getOrDefault(-1)
@@ -353,7 +366,7 @@ class AxiomService : Service() {
                     brightness, volumePct, ringerMode)
             }
 
-            android.util.Log.d(TAG, "Sensors: bat=$battery chg=$charging wifi=$wifi bt=$bt " +
+            Log.d(TAG, "Sensors: bat=$battery chg=$charging wifi=$wifi bt=$bt " +
                     "h=$hour bright=$brightness vol=$volumePct ringer=$ringerMode")
 
             // Dream triggers on charger connect with >= 20% battery.
@@ -362,7 +375,7 @@ class AxiomService : Service() {
                 maybeTriggerDream()
             }
         } catch (e: Exception) {
-            android.util.Log.e(TAG, "Sensor error: ${e.message}")
+            Log.e(TAG, "Sensor error: ${e.message}")
         }
     }
 
@@ -382,11 +395,11 @@ class AxiomService : Service() {
                             ?: return@Thread
                         val score  = json.optDouble("confidence", 0.0)
                         if (score >= 0.75) {
-                            android.util.Log.i(TAG, "Proactive: $action score=$score")
+                            Log.i(TAG, "Proactive: $action score=$score")
                             postProactiveNotif(action, score)
                         }
                     } catch (e: Exception) {
-                        android.util.Log.e(TAG, "Proactive error: ${e.message}")
+                        Log.e(TAG, "Proactive error: ${e.message}")
                     }
                 }.start()
             }
@@ -405,7 +418,7 @@ class AxiomService : Service() {
                 val nowSec  = System.currentTimeMillis() / 1000L
                 val gapSec  = ChargingReceiver.MIN_USAGE_GAP_MS / 1000L
                 if (nowSec - lastSec > gapSec) {
-                    android.util.Log.i(TAG, "Service usage scan (alarm fallback)")
+                    Log.i(TAG, "Service usage scan (alarm fallback)")
                     Thread { runUsageScan(2) }.start()
                 }
             }
@@ -425,10 +438,10 @@ class AxiomService : Service() {
                         if (report != null) {
                             postInsightNotif(report)
                             insightEngine.markSent(report.narrative)
-                            android.util.Log.i(TAG, "Insight sent: ${report.insightType}")
+                            Log.i(TAG, "Insight sent: ${report.insightType}")
                         }
                     } catch (e: Exception) {
-                        android.util.Log.e(TAG, "Insight error: ${e.message}")
+                        Log.e(TAG, "Insight error: ${e.message}")
                     }
                 }.start()
             }
@@ -445,11 +458,11 @@ class AxiomService : Service() {
             try {
                 val decision = phoneModeManager.evaluate()
                 if (decision != null) {
-                    android.util.Log.i(TAG, "Mode switched: ${decision.mode} — ${decision.reason}")
+                    Log.i(TAG, "Mode switched: ${decision.mode} — ${decision.reason}")
                     postModeNotif(decision)
                 }
             } catch (e: Exception) {
-                android.util.Log.e(TAG, "Mode eval error: ${e.message}")
+                Log.e(TAG, "Mode eval error: ${e.message}")
             }
             handler.postDelayed(this, 5 * 60_000L)
         }
@@ -468,10 +481,10 @@ class AxiomService : Service() {
                 .putLong(ChargingReceiver.KEY_LAST_USAGE_TS,
                     System.currentTimeMillis() / 1000L)
                 .apply()
-            android.util.Log.i(TAG, "Usage scan done: ${result.mappedEvents} events")
+            Log.i(TAG, "Usage scan done: ${result.mappedEvents} events")
             updateServiceNotif()
         } catch (e: Exception) {
-            android.util.Log.e(TAG, "Usage scan error: ${e.message}")
+            Log.e(TAG, "Usage scan error: ${e.message}")
         }
     }
 
@@ -522,7 +535,7 @@ class AxiomService : Service() {
             // No search verb → safe to try plain app launch first
             val appIntent = tryLaunchApp(prompt)
             if (appIntent != null) {
-                android.util.Log.d(TAG, "T0 app launch for: '${prompt.take(30)}'")
+                Log.d(TAG, "T0 app launch for: '${prompt.take(30)}'")
                 return appIntent
             }
         }
@@ -552,14 +565,14 @@ class AxiomService : Service() {
         if (hasSearchVerb) {
             val appIntent = tryLaunchApp(prompt)
             if (appIntent != null) {
-                android.util.Log.d(TAG, "T0 fallback app launch: '${prompt.take(30)}'")
+                Log.d(TAG, "T0 fallback app launch: '${prompt.take(30)}'")
                 return appIntent
             }
         }
 
         // ── Tier 1: keyword + adapter pipeline ───────────────────────────────
         val keywordRaw  = runCatching { AxiomEngine.inferIntent(prompt) }.getOrElse {
-            android.util.Log.e(TAG, "inferIntent error: ${it.message}")
+            Log.e(TAG, "inferIntent error: ${it.message}")
             return buildReply("Something went wrong, please try again.")
         }
         val keywordJson = runCatching { org.json.JSONObject(keywordRaw) }.getOrNull()
@@ -576,7 +589,7 @@ class AxiomService : Service() {
         // "battery", "display", "wifi" are all in PHONE_VOCAB and would re-trigger
         // the LLM on every bypassed request without this guard.
         if (isBypass && keywordObj != "NONE") {
-            android.util.Log.d(TAG, "T1 bypass ${System.currentTimeMillis()-t0}ms: $keywordObj conf=$keywordConf")
+            Log.d(TAG, "T1 bypass ${System.currentTimeMillis()-t0}ms: $keywordObj conf=$keywordConf")
             return keywordRaw
         }
 
@@ -586,7 +599,7 @@ class AxiomService : Service() {
                 AxiomEngine.classifyIntent(buildClassifyPrompt(prompt))
             }.getOrNull()?.trim()?.uppercase() ?: ""
 
-            android.util.Log.d(TAG, "T2 classify ${System.currentTimeMillis()-t0}ms: '$llmRaw'")
+            Log.d(TAG, "T2 classify ${System.currentTimeMillis()-t0}ms: '$llmRaw'")
 
             if (llmRaw.isNotEmpty() && llmRaw != "NONE" && llmRaw.length < 60) {
                 val intentName = if (llmRaw.startsWith("ACTION_")) llmRaw else "ACTION_$llmRaw"
@@ -595,7 +608,7 @@ class AxiomService : Service() {
                     org.json.JSONObject(pipelineResult ?: "").optString("object", "NONE")
                 }.getOrDefault("NONE")
                 if (pipelineObj != "NONE") {
-                    android.util.Log.i(TAG, "T2 intent: $pipelineObj")
+                    Log.i(TAG, "T2 intent: $pipelineObj")
                     return pipelineResult!!
                 }
             }
@@ -607,20 +620,20 @@ class AxiomService : Service() {
         // The LLM will always say "Google" or "Anthropic" — intercept these here.
         val identityReply = checkIdentityQuestion(prompt)
         if (identityReply != null) {
-            android.util.Log.d(TAG, "Identity reply for: '${prompt.take(40)}'")
+            Log.d(TAG, "Identity reply for: '${prompt.take(40)}'")
             return buildReply(identityReply)
         }
 
         // ── Tier 3: LLM chat reply ────────────────────────────────────────────
-        android.util.Log.d(TAG, "T3 chat: '${prompt.take(40)}'")
+        Log.d(TAG, "T3 chat: '${prompt.take(40)}'")
         val chatReply = runCatching {
             AxiomEngine.conversationalAnswer(prompt, 120)
         }.getOrElse {
-            android.util.Log.e(TAG, "Chat error: ${it.message}")
+            Log.e(TAG, "Chat error: ${it.message}")
             ""
         }.trim()
 
-        android.util.Log.d(TAG, "T3 ${System.currentTimeMillis()-t0}ms: '${chatReply.take(60)}'")
+        Log.d(TAG, "T3 ${System.currentTimeMillis()-t0}ms: '${chatReply.take(60)}'")
 
         // Guard: if LLM outputs a single word or looks like an intent token, discard it
         val isGibberish = chatReply.isEmpty() ||
@@ -641,7 +654,7 @@ class AxiomService : Service() {
      */
     private fun tryLaunchApp(input: String): String? {
         return runCatching { tryLaunchAppInternal(input) }.getOrElse {
-            android.util.Log.e(TAG, "tryLaunchApp crashed: ${it.message}")
+            Log.e(TAG, "tryLaunchApp crashed: ${it.message}")
             null
         }
     }
@@ -728,12 +741,12 @@ class AxiomService : Service() {
                     pm.getApplicationInfo(pkg, 0); true
                 }.getOrDefault(false)
                 if (installed) {
-                    android.util.Log.i(TAG, "T0 known: '$s' → $pkg")
+                    Log.i(TAG, "T0 known: '$s' → $pkg")
                     return buildAppLaunch(pkg, matchedKey)
                 }
             }
             // Packages not installed — fall through to fuzzy scan
-            android.util.Log.d(TAG, "T0 known key '$matchedKey' found but not installed")
+            Log.d(TAG, "T0 known key '$matchedKey' found but not installed")
         }
 
         // Step 2: scan ALL installed apps by visible label.
@@ -746,7 +759,7 @@ class AxiomService : Service() {
         // This is the same data the home screen uses — no permission required.
         if (s.length >= 3) {
             val allApps = runCatching {
-                pm.getInstalledApplications(android.content.pm.PackageManager.GET_META_DATA)
+                pm.getInstalledApplications(PackageManager.GET_META_DATA)
             }.getOrNull()
             // GET_META_DATA can OOM on some devices — fall back to flag 0
                 ?: runCatching { pm.getInstalledApplications(0) }.getOrNull()
@@ -775,7 +788,7 @@ class AxiomService : Service() {
                 // Accept the match — user-installed apps are always launchable.
                 // System apps in the match are also fine since they matched by label.
                 // MainActivity's launch fallback chain handles the actual opening.
-                android.util.Log.i(TAG, "T0 scan: '$s' -> $pkg ('$label')")
+                Log.i(TAG, "T0 scan: '$s' -> $pkg ('$label')")
                 return buildAppLaunch(pkg, label)
             }
         }
@@ -786,6 +799,43 @@ class AxiomService : Service() {
     // ═══════════════════════════════════════════════════════
     //  Tier 0.3 helpers
     // ═══════════════════════════════════════════════════════
+
+    /**
+     * The single correct way to fire a deep-link intent in Axiom.
+     *
+     * Android 12+ broke resolveActivity() for https URL handlers — apps that haven't
+     * completed domain-verification return null even when installed. The only reliable
+     * pattern: fire with pkg, catch ActivityNotFoundException, retry without pkg.
+     *
+     * Try 1 → pkg-locked intent  (opens directly in app: WhatsApp, Amazon, etc.)
+     * Try 2 → no-pkg fallback    (browser handles https, chooser for custom schemes)
+     * Try 3 → bare app launch    (last resort — just opens the app)
+     */
+    private fun launchWithFallback(intent: Intent?, pkg: String, successMsg: () -> String): String? {
+        if (intent == null) {
+            val launch = packageManager.getLaunchIntentForPackage(pkg)
+                ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) ?: return null
+            startActivityOnMain(launch)
+            return buildReply("Opening app.")
+        }
+        // On MIUI/HyperOS, startActivity from a background thread is blocked by
+        // Android 10+ background activity launch restrictions. We use startActivityOnMain
+        // which posts to Handler(mainLooper). Can't catch ActivityNotFoundException
+        // async, so check pkg is installed first as a proxy.
+        val pkgInstalled = runCatching {
+            packageManager.getApplicationInfo(pkg, 0); true
+        }.getOrDefault(false)
+        if (pkgInstalled) {
+            startActivityOnMain(intent)
+            return buildReply(successMsg())
+        }
+        // App not installed — strip pkg lock so browser/chooser can handle it
+        val fallback = if (intent.`package` != null)
+            Intent(intent).apply { `package` = null } else intent
+        startActivityOnMain(fallback)
+        return buildReply(successMsg())
+    }
+
     private val callVerbs    = listOf("call", "ring", "dial", "phone",
         "audio call", "voice call", "call karo", "phone karo")
     private val videoVerbs   = listOf("video call", "video chat", "facetime", "video karo")
@@ -802,41 +852,38 @@ class AxiomService : Service() {
         if (cabVerbs.any { q.contains(it) }) {
             val dest = extractContactOrQuery(q, cabVerbs + listOf("to","book","get","call"))
             val intent = AppIntentRegistry.buildNavigateIntent(this, profile, dest) ?: return null
-            return try { startActivity(intent)
-                buildReply("Booking ${profile.displayName}${if (dest.isNotBlank()) " to $dest" else ""}.")
-            } catch (e: Exception) { null }
+            startActivityOnMain(intent)
+            return buildReply("Booking ${profile.displayName}${if (dest.isNotBlank()) " to $dest" else ""}.")
         }
         if (postVerbs.any { q.startsWith(it) } && profile.postUri != null) {
             val text = extractContactOrQuery(q, postVerbs)
             if (text.isNotBlank()) {
                 val uri = profile.postUri.replace("{q}", java.net.URLEncoder.encode(text, "UTF-8"))
-                return try {
-                    startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(uri)).apply {
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) })
-                    buildReply("Opening ${profile.displayName} to post.")
-                } catch (e: Exception) { null }
+                startActivityOnMain(Intent(Intent.ACTION_VIEW, Uri.parse(uri)).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) })
+                return buildReply("Opening ${profile.displayName} to post.")
             }
         }
         if (videoVerbs.any { q.startsWith(it) }) {
             val contact = resolveContact(extractContactOrQuery(q, videoVerbs))
-            val intent  = AppIntentRegistry.buildCallIntent(this, profile, contact?.phone, isVideo = true) ?: return null
-            return try { startActivity(intent)
-                buildReply("Video calling${if (contact?.displayName?.isNotBlank() == true) " ${contact.displayName}" else ""} on ${profile.displayName}.")
-            } catch (e: Exception) { null }
+            val intent  = AppIntentRegistry.buildCallIntent(this, profile, contact?.phone, isVideo = true)
+            return launchWithFallback(intent, profile.pkg) {
+                "Video calling${if (contact?.displayName?.isNotBlank() == true) " ${contact.displayName}" else ""} on ${profile.displayName}."
+            }
         }
         if (callVerbs.any { q.startsWith(it) }) {
             val contact = resolveContact(extractContactOrQuery(q, callVerbs))
-            val intent  = AppIntentRegistry.buildCallIntent(this, profile, contact?.phone, isVideo = false) ?: return null
-            return try { startActivity(intent)
-                buildReply("Calling${if (contact?.displayName?.isNotBlank() == true) " ${contact.displayName}" else ""} on ${profile.displayName}.")
-            } catch (e: Exception) { null }
+            val intent  = AppIntentRegistry.buildCallIntent(this, profile, contact?.phone, isVideo = false)
+            return launchWithFallback(intent, profile.pkg) {
+                "Calling${if (contact?.displayName?.isNotBlank() == true) " ${contact.displayName}" else ""} on ${profile.displayName}."
+            }
         }
         if (messageVerbs.any { q.startsWith(it) }) {
             val contact = resolveContact(extractContactOrQuery(q, messageVerbs))
-            val intent  = AppIntentRegistry.buildMessageIntent(this, profile, contact?.phone, "") ?: return null
-            return try { startActivity(intent)
-                buildReply("Opening ${profile.displayName}${if (contact?.displayName?.isNotBlank() == true) " chat with ${contact.displayName}" else ""}.")
-            } catch (e: Exception) { null }
+            val intent  = AppIntentRegistry.buildMessageIntent(this, profile, contact?.phone, "")
+            return launchWithFallback(intent, profile.pkg) {
+                "Opening ${profile.displayName}${if (contact?.displayName?.isNotBlank() == true) " chat with ${contact.displayName}" else ""}."
+            }
         }
         return null
     }
@@ -883,15 +930,15 @@ class AxiomService : Service() {
 
         if (!((hasTrigger && hasFile) || (hasFile && hasTime))) return null
 
-        android.util.Log.i(TAG, "Tier 0.5 file search: '${prompt.take(60)}'")
+        Log.i(TAG, "Tier 0.5 file search: '${prompt.take(60)}'")
         runCatching {
             val intent = Intent(this, FileSearchActivity::class.java).apply {
                 putExtra(FileSearchActivity.EXTRA_INITIAL_QUERY, prompt)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            startActivity(intent)
+            startActivityOnMain(intent)
         }.onFailure {
-            android.util.Log.e(TAG, "FileSearchActivity launch failed: ${it.message}")
+            Log.e(TAG, "FileSearchActivity launch failed: ${it.message}")
         }
         return buildReply("Opening file search for: \"${prompt.take(50)}\"")
     }
@@ -929,15 +976,15 @@ class AxiomService : Service() {
         val tabIndex = if (openImageTab) 1 else 0
         val replyMsg = if (openImageTab) "Opening AI Image Detector." else "Opening AI Content Detector."
 
-        android.util.Log.i(TAG, "Tier 0.6 AI detector (tab=$tabIndex): '${prompt.take(50)}'")
+        Log.i(TAG, "Tier 0.6 AI detector (tab=$tabIndex): '${prompt.take(50)}'")
         runCatching {
-            startActivity(
+            startActivityOnMain(
                 Intent(this, AiDetectorActivity::class.java)
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     .putExtra(AiDetectorActivity.EXTRA_OPEN_TAB, tabIndex)
             )
         }.onFailure {
-            android.util.Log.e(TAG, "AiDetectorActivity launch failed: ${it.message}")
+            Log.e(TAG, "AiDetectorActivity launch failed: ${it.message}")
         }
         return buildReply(replyMsg)
     }
@@ -989,7 +1036,7 @@ class AxiomService : Service() {
             val timeFmt = SimpleDateFormat("h:mm a", Locale.getDefault())
             reply = "The current time is ${timeFmt.format(cal.time)}."
         }
-        android.util.Log.i(TAG, "Tier 0.7 time/date reply")
+        Log.i(TAG, "Tier 0.7 time/date reply")
         return buildReply(reply)
     }
 
@@ -1007,12 +1054,10 @@ class AxiomService : Service() {
         val label = extractAlarmLabel(q)
 
         if (time == null) {
-            runCatching {
-                startActivity(Intent(AlarmClock.ACTION_SHOW_ALARMS).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                })
-            }
-            return buildReply("Opening your alarms. Please set the time manually.")
+            return buildIntentReply(
+                displayText = "Opening your alarms. Please set the time manually.",
+                action      = AlarmClock.ACTION_SHOW_ALARMS
+            )
         }
 
         val hour   = time.first
@@ -1022,21 +1067,35 @@ class AxiomService : Service() {
         val minStr = minute.toString().padStart(2, '0')
         val timeStr = if (minute == 0) "$h12 $amPm" else "$h12:$minStr $amPm"
 
-        runCatching {
-            startActivity(Intent(AlarmClock.ACTION_SET_ALARM).apply {
-                putExtra(AlarmClock.EXTRA_HOUR, hour)
-                putExtra(AlarmClock.EXTRA_MINUTES, minute)
-                putExtra(AlarmClock.EXTRA_MESSAGE, label ?: "Axiom Alarm")
-                putExtra(AlarmClock.EXTRA_SKIP_UI, true)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            })
-        }.onFailure {
-            android.util.Log.e(TAG, "Alarm intent failed: ${it.message}")
+        // Resolve the installed clock package HERE — on the background infer() thread.
+        // This avoids any PackageManager calls on the main thread (ANR risk on MIUI).
+        val clockPkgs = listOf(
+            "com.miui.clock",                    // MIUI 14 / HyperOS (Xiaomi/Redmi/POCO)
+            "com.android.deskclock",             // Stock Android / most ROMs
+            "com.google.android.deskclock",      // Pixel / GMS
+            "com.sec.android.app.clockpackage",  // Samsung One UI
+            "com.oneplus.clock",                 // OnePlus OxygenOS
+            "com.coloros.alarmclock",            // ColorOS (Oppo/Realme)
+            "com.vivo.alarmclock",               // OriginOS (Vivo)
+            "com.huawei.deskclock",              // EMUI (Huawei)
+            "com.asus.deskclock",                // ZenUI (Asus)
+        )
+        val resolvedClockPkg = clockPkgs.firstOrNull { pkg ->
+            runCatching { packageManager.getLaunchIntentForPackage(pkg) != null }.getOrDefault(false)
         }
-
-        android.util.Log.i(TAG, "Tier 0.7 alarm: $hour:$minute label=$label")
+        Log.i(TAG, "Tier 0.7 alarm: $hour:$minute label=$label clockPkg=$resolvedClockPkg → LAUNCH_INTENT")
         val labelSuffix = if (label != null) " for $label" else ""
-        return buildReply("Alarm set for $timeStr$labelSuffix.")
+        return buildIntentReply(
+            displayText = "Alarm set for $timeStr$labelSuffix.",
+            action      = AlarmClock.ACTION_SET_ALARM,
+            pkg         = resolvedClockPkg,   // pre-resolved on bg thread, null = implicit
+            extras      = buildMap {
+                put("hour",    hour)
+                put("minutes", minute)
+                put("message", label ?: "Alarm")
+                put("skip_ui", false)
+            }
+        )
     }
 
     // ── Reminder ──────────────────────────────────────────────────────────────
@@ -1067,21 +1126,18 @@ class AxiomService : Service() {
         val minStr = minute.toString().padStart(2, '0')
         val timeStr = if (minute == 0) "$h12 $amPm" else "$h12:$minStr $amPm"
 
-        runCatching {
-            startActivity(Intent(AlarmClock.ACTION_SET_ALARM).apply {
-                putExtra(AlarmClock.EXTRA_HOUR, hour)
-                putExtra(AlarmClock.EXTRA_MINUTES, minute)
-                putExtra(AlarmClock.EXTRA_MESSAGE, label)
-                putExtra(AlarmClock.EXTRA_SKIP_UI, false)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            })
-        }.onFailure {
-            android.util.Log.e(TAG, "Reminder intent failed: ${it.message}")
-        }
-
-        android.util.Log.i(TAG, "Tier 0.7 reminder: $label at $hour:$minute")
+        Log.i(TAG, "Tier 0.7 reminder: $label at $hour:$minute → returning LAUNCH_INTENT")
         val timeNote = if (time != null) " for $timeStr" else ""
-        return buildReply("Reminder set$timeNote: $label.")
+        return buildIntentReply(
+            displayText = "Reminder set$timeNote: $label.",
+            action      = AlarmClock.ACTION_SET_ALARM,
+            extras      = buildMap {
+                put("hour",    hour)
+                put("minutes", minute)
+                put("message", label)
+                put("skip_ui", false)
+            }
+        )
     }
 
     // ── Email ─────────────────────────────────────────────────────────────────
@@ -1106,14 +1162,14 @@ class AxiomService : Service() {
                 if (body != null)    putExtra(Intent.EXTRA_TEXT,    body)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            startActivity(Intent.createChooser(emailIntent, "Send email via").apply {
+            startActivityOnMain(Intent.createChooser(emailIntent, "Send email via").apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             })
         }.onFailure {
-            android.util.Log.e(TAG, "Email intent failed: ${it.message}")
+            Log.e(TAG, "Email intent failed: ${it.message}")
         }
 
-        android.util.Log.i(TAG, "Tier 0.7 email: to=$to subject=$subject")
+        Log.i(TAG, "Tier 0.7 email: to=$to subject=$subject")
         val toStr = if (to != null) " to $to" else ""
         return buildReply("Opening email composer$toStr.")
     }
@@ -1172,7 +1228,7 @@ class AxiomService : Service() {
             launchMapsUri(uri, pkg)
             val reply = if (!place.isNullOrBlank()) "Checking traffic near $place."
             else "Opening Maps traffic view for your area."
-            android.util.Log.i(TAG, "Tier 0.7 maps traffic: place=$place")
+            Log.i(TAG, "Tier 0.7 maps traffic: place=$place")
             return buildReply(reply)
         }
 
@@ -1184,7 +1240,7 @@ class AxiomService : Service() {
             if (!thing.isNullOrBlank()) {
                 val uri = "https://www.google.com/maps/search/${enc(thing + " near me")}"
                 launchMapsUri(uri, pkg)
-                android.util.Log.i(TAG, "Tier 0.7 maps nearby: $thing")
+                Log.i(TAG, "Tier 0.7 maps nearby: $thing")
                 return buildReply("Searching for $thing near you.")
             }
             // No specific thing — open Maps to let user search
@@ -1200,7 +1256,7 @@ class AxiomService : Service() {
             if (!dest.isNullOrBlank()) {
                 val uri = "https://www.google.com/maps/dir/?api=1&destination=${enc(dest)}"
                 launchMapsUri(uri, pkg)
-                android.util.Log.i(TAG, "Tier 0.7 maps eta: $dest")
+                Log.i(TAG, "Tier 0.7 maps eta: $dest")
                 return buildReply("Getting directions to $dest.")
             }
         }
@@ -1229,7 +1285,7 @@ class AxiomService : Service() {
                 val uri = "https://www.google.com/maps/dir/?api=1" +
                         "&destination=${enc(dest)}&travelmode=driving"
                 launchMapsUri(uri, pkg)
-                android.util.Log.i(TAG, "Tier 0.7 maps nav: $dest")
+                Log.i(TAG, "Tier 0.7 maps nav: $dest")
                 return buildReply("Starting navigation to $dest.")
             }
             // No destination parsed — open Maps and let user type
@@ -1243,18 +1299,16 @@ class AxiomService : Service() {
     /** Opens a Maps URI in the Maps app; falls back to browser if not installed. */
     private fun launchMapsUri(uri: String, pkg: String) {
         runCatching {
-            val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(uri)).apply {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri)).apply {
                 `package` = pkg
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            startActivity(intent)
+            startActivityOnMain(intent)
         }.onFailure {
             // Maps not installed — open in browser
-            runCatching {
-                startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(uri)).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                })
-            }
+            startActivityOnMain(Intent(Intent.ACTION_VIEW, Uri.parse(uri)).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            })
         }
     }
 
@@ -1296,7 +1350,7 @@ class AxiomService : Service() {
         if (cleanQ.isBlank()) {
             runCatching {
                 packageManager.getLaunchIntentForPackage(profile.pkg)
-                    ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)?.let { startActivity(it) }
+                    ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)?.let { startActivityOnMain(it) }
             }
             return buildReply("Opening ${profile.displayName}.")
         }
@@ -1307,13 +1361,13 @@ class AxiomService : Service() {
             else -> AppIntentRegistry.buildSearchIntent(this, profile, cleanQ)
         } ?: return null
         return try {
-            startActivity(intent)
-            android.util.Log.i(TAG, "Tier 0.7 in-app: ${profile.displayName} q=$cleanQ")
+            startActivityOnMain(intent)
+            Log.i(TAG, "Tier 0.7 in-app: ${profile.displayName} q=$cleanQ")
             buildReply("Searching ${profile.displayName} for \"$cleanQ\".")
         } catch (e: Exception) {
             runCatching {
                 packageManager.getLaunchIntentForPackage(profile.pkg)
-                    ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)?.let { startActivity(it) }
+                    ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)?.let { startActivityOnMain(it) }
             }
             buildReply("Opening ${profile.displayName}.")
         }
@@ -1384,8 +1438,23 @@ class AxiomService : Service() {
     }
 
     private fun extractAlarmLabel(q: String): String? {
-        val re = Regex("""(?:alarm|wake me(?:\s+up)?)\s+(?:for|to)\s+(.+)""")
-        return re.find(q)?.groupValues?.getOrNull(1)?.trim()?.take(50)
+        // Only return a label when there's meaningful text BEYOND the time.
+        // "set alarm for 6 am"        → null  (captured "6 am", stripped fully, blank)
+        // "alarm for gym at 6 am"     → "gym"
+        // "wake me for meeting at 8"  → "meeting"
+        val re = Regex("""(?:alarm|wake\s+me(?:\s+up)?)\s+(?:for|to)\s+(.+)""")
+        val raw = re.find(q)?.groupValues?.getOrNull(1)?.trim() ?: return null
+        // Strip time tokens. am/pm suffix is NON-OPTIONAL in first pattern so that
+        // bare digits like "8" are not stripped (user might say "alarm for 8 items").
+        // A leading bare number with am/pm is still stripped: "6 am" → "".
+        val timeRe = Regex(
+            """\b(?:at\s+|by\s+|around\s+|before\s+|after\s+)?\d{1,2}(?::\d{2})?\s*(?:am|pm|morning|evening|night|tonight|noon|midnight)\b""" +
+                    """|\b(?:half\s+past|quarter\s+(?:to|past))\s+\d{1,2}\b""" +
+                    """|\btomorrow\b|\btonight\b|\bnow\b|\btoday\b""",
+            RegexOption.IGNORE_CASE
+        )
+        val label = timeRe.replace(raw, "").replace(Regex("""\s{2,}"""), " ").trim(' ', ',', '.', '-')
+        return if (label.length >= 2) label.take(50) else null
     }
 
     private fun extractReminderTopic(q: String, original: String): String? {
@@ -1442,6 +1511,29 @@ class AxiomService : Service() {
     private fun buildReply(text: String): String =
         """{"object":"NONE","confidence":0.0,"reply":${org.json.JSONObject.quote(text)}}"""
 
+    /**
+     * Returns LAUNCH_INTENT JSON — MainActivity fires startActivity() from the foreground.
+     * Solves MIUI/HyperOS background activity launch restriction for alarms, reminders, etc.
+     * Works on ALL Android devices universally (not MIUI-specific).
+     */
+    private fun buildIntentReply(
+        displayText: String,
+        action: String,
+        pkg: String? = null,
+        extras: Map<String, Any> = emptyMap()
+    ): String {
+        val extrasObj = org.json.JSONObject()
+        extras.forEach { (k, v) -> extrasObj.put(k, v) }
+        return org.json.JSONObject().apply {
+            put("object",  "LAUNCH_INTENT")
+            put("confidence", 1.0)
+            put("reply",   displayText)
+            put("action",  action)
+            if (pkg != null) put("pkg", pkg)
+            put("extras",  extrasObj)
+        }.toString()
+    }
+
     private fun buildClassifyPrompt(userInput: String): String =
         "<|im_start|>system\nOutput one intent token only.\n<|im_end|>\n" +
                 "<|im_start|>user\n" +
@@ -1474,8 +1566,8 @@ class AxiomService : Service() {
         if (identityPatterns.none { s.contains(it) }) return null
 
         // Personalise these:
-        val developerName = "Rayad"
-        val developerInfo = "from Germany"
+        val developerName = "Rayad"   // ← replace with your name e.g. "Rahul"
+        val developerInfo = "from Germany" // ← replace with a short description
 
         return when {
             s.contains("who are you") || s.contains("what are you") ||
@@ -1511,7 +1603,7 @@ class AxiomService : Service() {
         // as a separate namespace from phone intent tokens.
         val intentKey = "APP:$packageName"
         AxiomEngine.registerFeedback(intentKey, 1)  // 1 = accepted
-        android.util.Log.d(TAG, "App open recorded: $intentKey ($appLabel)")
+        Log.d(TAG, "App open recorded: $intentKey ($appLabel)")
     }
 
     fun feedback(intent: String, accepted: Boolean) {
@@ -1547,10 +1639,10 @@ class AxiomService : Service() {
                     try {
                         val posted = lifeContextAssistant.check()
                         if (posted.isNotEmpty()) {
-                            android.util.Log.i(TAG, "LifeContext: posted ${posted.size} reminder(s)")
+                            Log.i(TAG, "LifeContext: posted ${posted.size} reminder(s)")
                         }
                     } catch (e: Exception) {
-                        android.util.Log.e(TAG, "LifeContext error: ${e.message}")
+                        Log.e(TAG, "LifeContext error: ${e.message}")
                     }
                 }.start()
             }
@@ -1599,7 +1691,7 @@ class AxiomService : Service() {
         val lastDreamMs = prefs.getLong(ChargingReceiver.KEY_LAST_DREAM_TS, 0L) * 1000L
         val nowMs       = System.currentTimeMillis()
         if (nowMs - lastDreamMs < ChargingReceiver.MIN_DREAM_GAP_MS) {
-            android.util.Log.i(TAG, "Dream ran ${(nowMs - lastDreamMs) / 3600000}h ago — skipping")
+            Log.i(TAG, "Dream ran ${(nowMs - lastDreamMs) / 3600000}h ago — skipping")
             return
         }
         startDreamCycle()
@@ -1607,12 +1699,12 @@ class AxiomService : Service() {
 
     /** Called by maybeTriggerDream() (sensor loop) and onStartCommand (POWER_CONNECTED). */
     fun startDreamCycle() {
-        if (dreamRunning) { android.util.Log.i(TAG, "Dream already running"); return }
-        android.util.Log.i(TAG, "startDreamCycle: engineReady=$engineReady dreamRunning=$dreamRunning")
+        if (dreamRunning) { Log.i(TAG, "Dream already running"); return }
+        Log.i(TAG, "startDreamCycle: engineReady=$engineReady dreamRunning=$dreamRunning")
         if (!engineReady) {
             // Engine still loading — schedule one retry in 90 seconds.
             // Do NOT set the last-dream timestamp yet; that would block retries.
-            android.util.Log.i(TAG, "Engine not ready — will retry dream in 90s")
+            Log.i(TAG, "Engine not ready — will retry dream in 90s")
             handler.postDelayed({ maybeTriggerDream() }, 90_000L)
             return
         }
@@ -1630,11 +1722,11 @@ class AxiomService : Service() {
 
         sendBroadcast(Intent(DreamService.ACTION_DREAM_STARTED).apply { `package` = packageName })
 
-        val nm = getSystemService(NOTIFICATION_SERVICE) as android.app.NotificationManager
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            nm.createNotificationChannel(android.app.NotificationChannel(
+        val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            nm.createNotificationChannel(NotificationChannel(
                 DreamService.NOTIF_CHANNEL, "Axiom Dreaming",
-                android.app.NotificationManager.IMPORTANCE_DEFAULT
+                NotificationManager.IMPORTANCE_DEFAULT
             ).apply { description = "Shown while Axiom consolidates learning" })
         }
         nm.notify(DreamService.NOTIF_ID,
@@ -1646,7 +1738,7 @@ class AxiomService : Service() {
                 .setPriority(androidx.core.app.NotificationCompat.PRIORITY_DEFAULT)
                 .build()
         )
-        android.util.Log.i(TAG, "Dream cycle started — notif posted, broadcast sent")
+        Log.i(TAG, "Dream cycle started — notif posted, broadcast sent")
 
         Thread {
             try {
@@ -1703,13 +1795,13 @@ class AxiomService : Service() {
                     `package` = packageName
                     putExtra(DreamService.EXTRA_DREAM_RESULT, resultJson)
                 })
-                android.util.Log.i(TAG, "Dream complete: trained=$trained events=$events")
+                Log.i(TAG, "Dream complete: trained=$trained events=$events")
 
             } catch (e: Exception) {
                 // Dream failed — write a visible error state so the user sees something
                 // instead of the card silently disappearing. Common cause: no events yet
                 // (first few days), or JNI crash. Both are safe to retry next charge cycle.
-                android.util.Log.e(TAG, "Dream error: ${e.message}")
+                Log.e(TAG, "Dream error: ${e.message}")
                 val errorJson = org.json.JSONObject().apply {
                     put("dream_ts", System.currentTimeMillis())
                     put("trained",  0)
@@ -2080,7 +2172,7 @@ class AxiomService : Service() {
 
     fun startWakeWordListening() {
         if (!SpeechRecognizer.isRecognitionAvailable(this)) {
-            android.util.Log.w(TAG, "Wake word: SpeechRecognizer not available")
+            Log.w(TAG, "Wake word: SpeechRecognizer not available")
             return
         }
         if (wakeListening) return
@@ -2101,7 +2193,7 @@ class AxiomService : Service() {
                     ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                     ?.firstOrNull()?.trim()?.lowercase() ?: return
                 if (WAKE_WORDS.any { word -> text.contains(word) }) {
-                    android.util.Log.i(TAG, "Wake word detected (partial): '$text'")
+                    Log.i(TAG, "Wake word detected (partial): '$text'")
                     onWakeWordDetected()
                 }
             }
@@ -2111,9 +2203,9 @@ class AxiomService : Service() {
                 val text = results
                     ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                     ?.firstOrNull()?.trim()?.lowercase() ?: ""
-                android.util.Log.d(TAG, "Wake loop heard: '$text'")
+                Log.d(TAG, "Wake loop heard: '$text'")
                 if (WAKE_WORDS.any { word -> text.contains(word) }) {
-                    android.util.Log.i(TAG, "Wake word detected: '$text'")
+                    Log.i(TAG, "Wake word detected: '$text'")
                     onWakeWordDetected()
                 } else {
                     // Not a wake word — restart listening after 300ms
@@ -2133,7 +2225,7 @@ class AxiomService : Service() {
                 val permanent = error == SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS ||
                         error == SpeechRecognizer.ERROR_RECOGNIZER_BUSY
                 val delay = if (permanent) 10_000L else 1_500L
-                android.util.Log.d(TAG, "Wake loop error $error — retry in ${delay}ms")
+                Log.d(TAG, "Wake loop error $error — retry in ${delay}ms")
                 if (!permanent) wakeHandler.postDelayed(wakeRestartRunnable, delay)
             }
         })
@@ -2150,9 +2242,9 @@ class AxiomService : Service() {
         }
         runCatching {
             wakeRecognizer?.startListening(intent)
-            android.util.Log.d(TAG, "Wake word: listening…")
+            Log.d(TAG, "Wake word: listening…")
         }.onFailure {
-            android.util.Log.e(TAG, "Wake word startListening failed: ${it.message}")
+            Log.e(TAG, "Wake word startListening failed: ${it.message}")
             wakeHandler.postDelayed(wakeRestartRunnable, 2000)
         }
     }
@@ -2162,7 +2254,7 @@ class AxiomService : Service() {
         wakeListening = false
         wakeRecognizer?.destroy()
         wakeRecognizer = null
-        android.util.Log.i(TAG, "Wake word: stopped")
+        Log.i(TAG, "Wake word: stopped")
     }
 
     fun pauseWakeWordListening() {
@@ -2170,13 +2262,13 @@ class AxiomService : Service() {
         wakeHandler.removeCallbacks(wakeRestartRunnable)
         wakeRecognizer?.stopListening()
         wakeListening = false
-        android.util.Log.d(TAG, "Wake word: paused (UI in foreground)")
+        Log.d(TAG, "Wake word: paused (UI in foreground)")
     }
 
     fun resumeWakeWordListening() {
         wakePaused = false
         wakeHandler.postDelayed(wakeRestartRunnable, 1000)
-        android.util.Log.d(TAG, "Wake word: resumed")
+        Log.d(TAG, "Wake word: resumed")
     }
 
     private fun onWakeWordDetected() {

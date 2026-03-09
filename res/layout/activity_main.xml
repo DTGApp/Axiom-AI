@@ -446,6 +446,48 @@
 
         </LinearLayout>
 
+        <!-- LAST RESULT CARD -->
+        <LinearLayout
+            android:id="@+id/cardLastResult"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_card"
+            android:padding="18dp"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
+            android:layout_marginBottom="12dp"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="LAST RESULT"
+                android:textSize="11sp"
+                android:textColor="#5F7D9C"
+                android:letterSpacing="0.14"
+                android:layout_marginBottom="10dp" />
+
+            <TextView
+                android:id="@+id/tvLastAction"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="—"
+                android:textColor="#00E5FF"
+                android:textSize="17sp"
+                android:fontFamily="sans-serif-medium"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:id="@+id/tvConfidence"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="—"
+                android:textColor="#9AAEB9"
+                android:textSize="13sp" />
+
+        </LinearLayout>
+
         <!-- EXAMPLE CARD — rotating "try saying" prompts, updated every onResume -->
         <LinearLayout
             android:id="@+id/cardExamples"
@@ -1281,48 +1323,6 @@
                 android:textColor="#080B14"
                 android:backgroundTint="#00E5FF"
                 android:fontFamily="sans-serif-medium" />
-
-        </LinearLayout>
-
-        <!-- LAST RESULT CARD -->
-        <LinearLayout
-            android:id="@+id/cardLastResult"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="@drawable/bg_card"
-            android:padding="18dp"
-            android:layout_marginStart="20dp"
-            android:layout_marginEnd="20dp"
-            android:layout_marginBottom="12dp"
-            android:visibility="gone">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="LAST RESULT"
-                android:textSize="11sp"
-                android:textColor="#5F7D9C"
-                android:letterSpacing="0.14"
-                android:layout_marginBottom="10dp" />
-
-            <TextView
-                android:id="@+id/tvLastAction"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="—"
-                android:textColor="#00E5FF"
-                android:textSize="17sp"
-                android:fontFamily="sans-serif-medium"
-                android:layout_marginBottom="4dp" />
-
-            <TextView
-                android:id="@+id/tvConfidence"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="—"
-                android:textColor="#9AAEB9"
-                android:textSize="13sp" />
 
         </LinearLayout>
 

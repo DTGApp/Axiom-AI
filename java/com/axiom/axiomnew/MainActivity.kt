@@ -1,6 +1,6 @@
 /*
  * Axiom — On-Device AI Assistant for Android
- * Copyright (C) 2024 [Your Name]
+ * Copyright (C) 2024 Rayad
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -15,6 +15,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
+
+
 package com.axiom.axiomnew
 
 import android.Manifest
@@ -1880,6 +1882,76 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
+        // ── Foreground intent launch (alarm, reminder, email, etc.) ──────────
+        // AxiomService cannot start activities reliably on many ROMs (MIUI, HyperOS,
+        // ColorOS, etc.) due to Android 10+ background activity launch restrictions.
+        // Instead it returns LAUNCH_INTENT JSON and we fire startActivity() here
+        // from MainActivity, which has a valid foreground window token.
+        if (json.optString("object") == "LAUNCH_INTENT") {
+            val reply  = json.optString("reply", "Done.")
+            val action = json.optString("action", "")
+            val pkg    = json.optString("pkg", "").takeIf { it.isNotEmpty() }
+            val extras = json.optJSONObject("extras")
+            val isAlarm = action == android.provider.AlarmClock.ACTION_SET_ALARM ||
+                    action == android.provider.AlarmClock.ACTION_SHOW_ALARMS
+
+            tvLastAction.text = reply
+            tvConfidence.text = if (isAlarm) "⏰ Axiom" else "🚀 Axiom"
+            cardLastResult.visibility = View.VISIBLE
+            cardContext?.visibility   = View.GONE
+            if (isVoiceInput) speakReply(reply)
+
+            if (action.isNotEmpty()) {
+                fun buildIntent(forcePkg: String?) = Intent(action).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    forcePkg?.let { `package` = it }
+                    if (action == android.provider.AlarmClock.ACTION_SET_ALARM) {
+                        // Use AlarmClock constants — generic key loop below won't cover these
+                        extras?.optInt("hour",    -1).takeIf { it != -1 }?.let {
+                            putExtra(android.provider.AlarmClock.EXTRA_HOUR, it) }
+                        extras?.optInt("minutes", -1).takeIf { it != -1 }?.let {
+                            putExtra(android.provider.AlarmClock.EXTRA_MINUTES, it) }
+                        extras?.optString("message")?.let {
+                            putExtra(android.provider.AlarmClock.EXTRA_MESSAGE, it) }
+                        putExtra(android.provider.AlarmClock.EXTRA_SKIP_UI, false)
+                    } else {
+                        extras?.keys()?.forEach { key ->
+                            when (val v = extras.get(key)) {
+                                is Int     -> putExtra(key, v)
+                                is Boolean -> putExtra(key, v)
+                                is String  -> putExtra(key, v)
+                                else       -> putExtra(key, v.toString())
+                            }
+                        }
+                    }
+                }
+
+                // pkg is pre-resolved on the background infer() thread — no PM calls here.
+                // Try pkg-locked first (specific clock app), then implicit fallback.
+                val fired = runCatching { startActivity(buildIntent(pkg)); true }.getOrDefault(false)
+                        || runCatching { startActivity(buildIntent(null)); true }.getOrDefault(false)
+
+                android.util.Log.i("AxiomMain", "LAUNCH_INTENT action=$action pkg=$pkg fired=$fired")
+
+                // Show OS-restriction notice on every alarm until user taps "Got it".
+                // We can't detect a silent OS block (intent fires but Clock never opens),
+                // so we always warn and give the user an "Open Clock" escape hatch.
+                if (isAlarm) {
+                    val prefs = getSharedPreferences(PREFS_MAIN, MODE_PRIVATE)
+                    if (!prefs.getBoolean("alarm_os_notice_shown", false)) {
+                        showAlarmOsNotice(pkg)  // pkg pre-resolved on bg thread, no PM calls here
+                    } else if (!fired) {
+                        runCatching {
+                            android.widget.Toast.makeText(this,
+                                "Clock app didn't open — please set the alarm manually.",
+                                android.widget.Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }
+            }
+            return
+        }
+
         // ── Conversational reply ──────────────────────────────────────────────
         if (json.optString("object") == "NONE") {
             val reply = json.optString("reply", "")
@@ -2708,6 +2780,54 @@ class MainActivity : AppCompatActivity() {
      *   2. Try known OEM package names as a fast-path backup.
      *   3. Last resort: open Date & Time settings (never crashes).
      */
+    /**
+     * Shown the first time an alarm/reminder is attempted.
+     * On many devices (MIUI, HyperOS, ColorOS, stock Android 10+) the OS silently
+     * blocks the Clock app from opening when triggered by a third-party app — even
+     * when the intent fires without an exception. This is honest UX: tell the user
+     * what happened and give them two easy escape hatches.
+     */
+    private fun showAlarmOsNotice(clockPkg: String?) {
+        // All PM calls deferred to button tap — zero work on main thread at call time
+        val isMiui = android.os.Build.MANUFACTURER.lowercase().let {
+            it.contains("xiaomi") || it.contains("redmi") || it.contains("poco")
+        }
+        val brand = android.os.Build.MANUFACTURER.replaceFirstChar { it.uppercase() }
+
+        val brandNote = if (isMiui)
+            "\n\nOn $brand: Settings → Apps → Manage apps → Axiom → Autostart → Enable. " +
+                    "Also add Axiom to the battery whitelist under Battery & Performance."
+        else
+            "\n\nOn $brand: check Settings → Apps → Special app access → Alarms & reminders, " +
+                    "and make sure Axiom is allowed."
+
+        android.app.AlertDialog.Builder(this)
+            .setTitle("⚠️  Clock app didn't open")
+            .setMessage(
+                "Your device's OS ($brand) restricts third-party apps from opening " +
+                        "the Clock app automatically. This is a manufacturer security policy — " +
+                        "not a bug in Axiom.\n\n" +
+                        "Axiom can still set alarms, but you may need to open the Clock app manually " +
+                        "and confirm the alarm there." +
+                        brandNote
+            )
+            .setPositiveButton("Open Clock now") { _, _ ->
+                // Build launch intent here (button tap) — not at dialog creation time
+                val clockLaunch = clockPkg?.let {
+                    runCatching { packageManager.getLaunchIntentForPackage(it) }.getOrNull()
+                        ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                runCatching { clockLaunch?.let { startActivity(it) } }
+            }
+            .setNegativeButton("Got it") { _, _ ->
+                // Mark as acknowledged so we stop showing the full dialog
+                getSharedPreferences(PREFS_MAIN, MODE_PRIVATE)
+                    .edit().putBoolean("alarm_os_notice_shown", true).apply()
+            }
+            .setCancelable(false)
+            .show()
+    }
+
     private fun openClockApp(): Intent? {
         // Step 1: dynamic discovery - find any launcher activity whose package
         // name suggests it's a clock/alarm app. Works on every OEM without

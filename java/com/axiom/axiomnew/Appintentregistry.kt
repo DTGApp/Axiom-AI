@@ -1,21 +1,3 @@
-
-/*
- * Axiom — On-Device AI Assistant for Android
- * Copyright (C) 2024 [Your Name]
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published
- * by the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- */
 package com.axiom.axiomnew
 
 import android.content.BroadcastReceiver
@@ -98,7 +80,9 @@ object AppIntentRegistry {
             pkg         = "com.whatsapp",
             displayName = "WhatsApp",
             aliases     = listOf("whatsapp", "whats app", "wa", "wapp"),
-            searchUri   = null,
+            // WhatsApp has no product-search deep-link. searchUri opens a new chat
+            // with the query pre-filled as message text — best available behaviour.
+            searchUri   = "https://api.whatsapp.com/send?text={q}",
             callUri     = "https://wa.me/{number}",
             messageUri  = "https://wa.me/{number}?text={q}",
             videoCallUri = "https://wa.me/{number}"   // opens chat; user taps video
@@ -323,19 +307,22 @@ object AppIntentRegistry {
         ),
 
         // ── Shopping ──────────────────────────────────────────────────────────
+        // Amazon India Play Store package is com.amazon.mShoppingApp on most devices.
+        // in.amazon.mShoppingApp is a legacy/direct-download variant — register both
+        // so whichever is installed gets matched. Both answer to "amazon".
         AppProfile(
-            pkg         = "in.amazon.mShoppingApp",
+            pkg         = "com.amazon.mShoppingApp",
             displayName = "Amazon",
-            aliases     = listOf("amazon", "amazon india", "amazon.in"),
+            aliases     = listOf("amazon", "amazon india", "amazon.in", "amazon.com", "amazon us"),
             searchUri   = "https://www.amazon.in/s?k={q}",
             shopUri     = "https://www.amazon.in/s?k={q}"
         ),
         AppProfile(
-            pkg         = "com.amazon.mShoppingApp",
-            displayName = "Amazon",
-            aliases     = listOf("amazon us", "amazon.com"),
-            searchUri   = "https://www.amazon.com/s?k={q}",
-            shopUri     = "https://www.amazon.com/s?k={q}"
+            pkg         = "in.amazon.mShoppingApp",
+            displayName = "Amazon India",
+            aliases     = listOf("amazon in app", "amzn"),
+            searchUri   = "https://www.amazon.in/s?k={q}",
+            shopUri     = "https://www.amazon.in/s?k={q}"
         ),
         AppProfile(
             pkg         = "com.flipkart.android",
@@ -859,19 +846,39 @@ object AppIntentRegistry {
         val q = namePart.lowercase().trim()
         // Exact alias match first
         val exactPkg = aliasIndex[q]
-        if (exactPkg != null) return installedProfiles[exactPkg]
+        if (exactPkg != null) {
+            val profile = installedProfiles[exactPkg]
+            if (profile != null) return profile
+            // aliasIndex has the pkg but installedProfiles doesn't — install check
+            // failed (wrong variant pkg name). Fall through to KNOWN_APPS scan.
+        }
         // Partial match — alias starts with query (handles "you" → "youtube")
         val partial = aliasIndex.entries
             .filter { it.key.startsWith(q) && q.length >= 3 }
             .mapNotNull { installedProfiles[it.value] }
             .firstOrNull()
         if (partial != null) return partial
-        // Partial match — query contains alias (handles "youtube music" contains "youtube")
-        // Pick the entry whose alias is longest (most specific match)
+        // Partial match — query contains alias
         val containsEntry = aliasIndex.entries
             .filter { e -> q.contains(e.key) && e.key.length >= 4 }
             .maxByOrNull { e -> e.key.length }
-        if (containsEntry != null) return installedProfiles[containsEntry.value]
+        if (containsEntry != null) {
+            val profile = installedProfiles[containsEntry.value]
+            if (profile != null) return profile
+        }
+        // ── Last resort: scan KNOWN_APPS directly ────────────────────────────
+        // Handles the case where install detection used the wrong package variant
+        // (e.g. in.amazon.mShoppingApp checked but com.amazon.mShoppingApp installed).
+        // Returns the profile without isInstalled=true so callers still work — the
+        // launchWithFallback try/catch will handle ActivityNotFoundException if wrong.
+        val fallback = KNOWN_APPS.firstOrNull { profile ->
+            profile.aliases.any { alias -> alias.lowercase() == q || q.contains(alias.lowercase()) }
+        }
+        if (fallback != null) {
+            Log.w(TAG, "findApp: '$q' matched via KNOWN_APPS fallback (pkg=${fallback.pkg}) — install detection may have used wrong variant")
+            return fallback.copy(isInstalled = true)
+        }
+        Log.w(TAG, "findApp: '$q' not found. aliasIndex size=${aliasIndex.size}")
         return null
     }
 
@@ -886,23 +893,16 @@ object AppIntentRegistry {
      */
     fun buildSearchIntent(context: Context, profile: AppProfile, query: String): Intent? {
         val enc = java.net.URLEncoder.encode(query, "UTF-8")
-
-        // Use curated URI if available
-        profile.searchUri?.let { uriTemplate ->
-            val uri = uriTemplate.replace("{q}", enc)
-            return buildViewIntent(uri, if (!uri.startsWith("http")) profile.pkg else null)
-        }
-
-        // Dynamic: try ACTION_SEARCH
+        // Return package-locked intent. Caller must try/catch ActivityNotFoundException
+        // and retry without pkg — never gate on resolveActivity() (see internal docs).
+        profile.searchUri?.let { return buildViewIntent(it.replace("{q}", enc), profile.pkg) }
         if (profile.supportsSearch) {
             return Intent(Intent.ACTION_SEARCH).apply {
-                `package`  = profile.pkg
+                `package` = profile.pkg
                 putExtra("query", query)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
         }
-
-        // Last resort: just launch
         return context.packageManager.getLaunchIntentForPackage(profile.pkg)
             ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     }
@@ -916,7 +916,8 @@ object AppIntentRegistry {
         profile.messageUri?.let { template ->
             val number = phoneNumber ?: ""
             val uri = template.replace("{number}", number).replace("{q}", enc).replace("{msg}", enc)
-            return buildViewIntent(uri, null)
+            // Always route through the target app — wa.me → WhatsApp, tg:// → Telegram, etc.
+            return buildAppOrBrowserIntent(context, uri, profile.pkg)
         }
         // Generic SMS fallback
         if (!phoneNumber.isNullOrBlank()) {
@@ -936,7 +937,7 @@ object AppIntentRegistry {
         else profile.callUri
         uriTemplate?.let {
             val uri = it.replace("{number}", number)
-            return buildViewIntent(uri, null)
+            return buildAppOrBrowserIntent(context, uri, profile.pkg)
         }
         // Fallback: system phone call
         if (!number.isBlank()) {
@@ -953,7 +954,7 @@ object AppIntentRegistry {
         val enc = java.net.URLEncoder.encode(destination, "UTF-8")
         val navUri = navigateUris[profile.pkg]
         navUri?.let {
-            return buildViewIntent(it.replace("{q}", enc), null)
+            return buildAppOrBrowserIntent(context, it.replace("{q}", enc), profile.pkg)
         }
         return context.packageManager.getLaunchIntentForPackage(profile.pkg)
             ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -962,18 +963,27 @@ object AppIntentRegistry {
     /** Build a play/watch Intent (Spotify, Netflix, YouTube, etc.). */
     fun buildPlayIntent(context: Context, profile: AppProfile, query: String): Intent? {
         val enc = java.net.URLEncoder.encode(query, "UTF-8")
-        val uriTemplate = profile.playUri ?: profile.watchUri ?: profile.searchUri
-        uriTemplate?.let {
-            return buildViewIntent(it.replace("{q}", enc),
-                if (!it.startsWith("http")) profile.pkg else null)
+        (profile.playUri ?: profile.watchUri ?: profile.searchUri)?.let {
+            return buildViewIntent(it.replace("{q}", enc), profile.pkg)
         }
         return buildSearchIntent(context, profile, query)
     }
 
-    // ── Internal ──────────────────────────────────────────────────────────────
-    private fun buildViewIntent(uri: String, forcePkg: String?): Intent =
-        Intent(Intent.ACTION_VIEW, Uri.parse(uri)).apply {
-            forcePkg?.let { `package` = it }
+    // ── Internal helpers ─────────────────────────────────────────────────────
+
+    private fun buildViewIntent(uri: String, pkg: String?): Intent =
+        Intent(Intent.ACTION_VIEW, android.net.Uri.parse(uri)).apply {
+            addCategory(Intent.CATEGORY_BROWSABLE)
+            pkg?.let { `package` = it }
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
+
+    // WHY NO resolveActivity():
+    // On Android 12+, resolveActivity() returns null for https URL handlers unless
+    // the app completed Google domain-verification (App Links). Amazon India, WhatsApp
+    // (wa.me), Flipkart, Netflix — most fail this on sideloaded builds.
+    // CORRECT PATTERN (Google's recommendation): fire with pkg, catch
+    // ActivityNotFoundException, retry without pkg. One function, fixes everything.
+    private fun buildAppOrBrowserIntent(context: Context, uri: String, pkg: String?): Intent =
+        buildViewIntent(uri, pkg)   // AxiomService.startActivity() handles the fallback
 }
