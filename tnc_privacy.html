@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="index,follow">
+<title>Stealth Messenger: Terms of Use and Privacy Policy</title>
+<meta name="description" content="Terms of Use and Privacy Policy for the Stealth Messenger app.">
+
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-soft: #f2f6fc;
+    --ink: #0c1424;
+    --muted: #4a5a75;
+    --line: #d5deec;
+    --accent: #0057d9;
+    --fill: #fff0a0;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --serif: Charter, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0a0e17;
+      --bg-soft: #111a2c;
+      --ink: #dde6f6;
+      --muted: #97a8c6;
+      --line: #25324b;
+      --accent: #66b3ff;
+      --fill: #5a4a00;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.7 var(--serif);
+  }
+  a { color: var(--accent); text-underline-offset: 2px; }
+  a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+  header.bar {
+    position: sticky; top: 0; z-index: 5;
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+  }
+  header.bar .inner {
+    max-width: 46rem; margin: 0 auto; padding: .7rem 1.25rem;
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+    font-family: var(--sans);
+  }
+  header.bar strong { font-size: .98rem; }
+  header.bar nav { display: flex; gap: 1.25rem; font-size: .95rem; }
+  header.bar nav a { text-decoration: none; font-weight: 600; padding: .25rem 0; border-bottom: 2px solid transparent; }
+  header.bar nav a:hover { border-bottom-color: var(--accent); }
+
+  main { max-width: 46rem; margin: 0 auto; padding: 2.25rem 1.25rem 4rem; }
+  h1, h2, h3 { font-family: var(--sans); line-height: 1.25; }
+  h1 { font-size: 2rem; margin: 0 0 .4rem; letter-spacing: -.01em; }
+  h2 { font-size: 1.55rem; margin: 0 0 .25rem; padding-top: .5rem; }
+  h3 { font-size: 1.08rem; margin: 2.1rem 0 .4rem; }
+  p { margin: .7rem 0; }
+  ul, ol { margin: .6rem 0 .9rem; padding-left: 1.4rem; }
+  li { margin: .3rem 0; }
+  .updated { color: var(--muted); font: .92rem var(--sans); margin: 0 0 1.5rem; }
+  section { scroll-margin-top: 4.2rem; padding-top: 1.5rem; }
+  section + section { margin-top: 3.5rem; border-top: 2px solid var(--line); padding-top: 2.5rem; }
+  [id] { scroll-margin-top: 4.2rem; }
+
+  .summary {
+    background: var(--bg-soft);
+    border-left: 4px solid var(--accent);
+    padding: .9rem 1.1rem;
+    margin: 1.2rem 0 1.6rem;
+    font-family: var(--sans); font-size: .96rem; line-height: 1.6;
+  }
+  .summary p:first-child { margin-top: 0; }
+  .summary p:last-child, .summary ul:last-child { margin-bottom: 0; }
+
+  .toc { font-family: var(--sans); font-size: .93rem; columns: 2; column-gap: 2rem; padding-left: 1.2rem; }
+  .toc li { break-inside: avoid; }
+  @media (max-width: 36rem) { .toc { columns: 1; } }
+
+  .fill { background: var(--fill); color: inherit; padding: 0 .25em; border-radius: 3px; }
+  .caps { text-transform: uppercase; font-size: .93em; }
+
+  .tablewrap { overflow-x: auto; margin: 1rem 0; border: 1px solid var(--line); }
+  table { border-collapse: collapse; width: 100%; min-width: 38rem; font: .9rem/1.5 var(--sans); }
+  th, td { text-align: left; vertical-align: top; padding: .6rem .75rem; border-bottom: 1px solid var(--line); }
+  th { background: var(--bg-soft); font-weight: 650; }
+  tr:last-child td { border-bottom: 0; }
+
+  footer { max-width: 46rem; margin: 0 auto; padding: 0 1.25rem 3rem; color: var(--muted); font: .9rem var(--sans); }
+
+  @media print {
+    header.bar { display: none; }
+    body { font-size: 11pt; }
+    a { color: inherit; }
+    section + section { page-break-before: always; }
+  }
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="inner">
+    <strong>Stealth Messenger</strong>
+    <nav aria-label="Documents">
+      <a href="#one">Terms of Use</a>
+      <a href="#two">Privacy Policy</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <h1>Terms of Use and Privacy Policy</h1>
+  <p class="updated">Last updated 1 November 2026</p>
+  <p>This page contains two documents for the Stealth Messenger app: the <a href="#one">Terms of Use</a> and the <a href="#two">Privacy Policy</a>. Please read both before you use the app.</p>
+
+  <!-- ======================================================= TERMS ======================================================= -->
+  <section id="one">
+    <h2>Terms of Use</h2>
+
+    <div class="summary">
+      <p><strong>Short version</strong> (the full text below is what counts):</p>
+      <ul>
+        <li>The app is free. It is provided as it is, without promises about security, availability or delivery.</li>
+        <li>Your messages are encrypted with a secret that you choose and share yourself. We cannot read them and we cannot recover a lost secret.</li>
+        <li>You are responsible for what you send, for choosing strong secrets and for keeping your device safe.</li>
+        <li>Do not use the app for anything unlawful or abusive.</li>
+        <li>Our liability is limited as far as the law allows. Rights that the law gives you cannot be taken away by these Terms.</li>
+      </ul>
+    </div>
+
+    <ol class="toc">
+      <li><a href="#t1">Who we are and what these Terms cover</a></li>
+      <li><a href="#t2">The service</a></li>
+      <li><a href="#t3">Who may use it</a></li>
+      <li><a href="#t4">Your responsibilities</a></li>
+      <li><a href="#t5">Acceptable use</a></li>
+      <li><a href="#t6">Messages and content</a></li>
+      <li><a href="#t7">No guarantee of security or confidentiality</a></li>
+      <li><a href="#t8">Availability and changes</a></li>
+      <li><a href="#t9">Third-party services</a></li>
+      <li><a href="#t10">Licence</a></li>
+      <li><a href="#t11">Disclaimer of warranties</a></li>
+      <li><a href="#t12">Limitation of liability</a></li>
+      <li><a href="#t13">Indemnification</a></li>
+      <li><a href="#t14">Suspension and termination</a></li>
+      <li><a href="#t15">Changes to these Terms</a></li>
+      <li><a href="#t16">Governing law and courts</a></li>
+      <li><a href="#t17">General provisions</a></li>
+      <li><a href="#t18">Contact</a></li>
+    </ol>
+
+    <h3 id="t1">1. Who we are and what these Terms cover</h3>
+    <p>The Stealth Messenger app, the message relay that connects the apps, the invitation pages and related services (together, the <strong>Service</strong>) are operated by <span class="fill">Saif Hassan</span>, <span class="fill">Vill- Muslim Mohalla Po/PS-Palkot
+Dist-Gumla
+Palkot - 835220
+India (IN)</span> (<strong>we</strong>, <strong>us</strong>). By installing or using the Service you agree to these Terms and to the <a href="#two">Privacy Policy</a>. If you do not agree, do not use the Service.</p>
+
+    <h3 id="t2">2. The service</h3>
+    <p>Stealth Messenger lets you send short text messages that your app encrypts with a secret you choose and then displays as ordinary-looking words in a theme (for example "Nature"). A relay server forwards the encrypted message to the recipient's device and deletes it once the device confirms receipt. You do not need an account, an email address or a phone number. The app identifies your installation with a random Inbox ID.</p>
+    <p>The app also contains a manual tool that encrypts and decrypts text on your device without sending anything to a server.</p>
+    <p>The Service is free. It has technical limits, which we may change at any time. At the time of writing these include: at most 200 words and 2,000 characters per message; rate limits; a limit on the number of undelivered messages per inbox; automatic deletion of undelivered messages after 7 days; and automatic deletion of inboxes that have not been used for 90 days.</p>
+
+    <h3 id="t3">3. Who may use it</h3>
+    <p>You must be at least 16 years old, or older if the law of your country requires a higher age for you to agree to these Terms without a parent's or guardian's consent. You must not use the Service where it is prohibited by law or where you are subject to sanctions that forbid it.</p>
+
+    <h3 id="t4">4. Your responsibilities</h3>
+    <ul>
+      <li><strong>Secrets.</strong> Choose long, hard-to-guess secrets, keep them confidential and share them with the recipient through a different channel than the chat (for example in person). We never receive your secrets. We cannot reset or recover them. If a secret is lost, the message cannot be read again.</li>
+      <li><strong>Your device.</strong> Protect your phone with a screen lock and keep it updated. Anyone who has your unlocked phone and the secret can read your messages. Notifications, screenshots, copies and other people looking at your screen are outside our control. The recipient can copy or share what you send.</li>
+      <li><strong>No backup.</strong> Messages are stored only on your device. Uninstalling the app, resetting or losing the phone, or using "Delete all chats" removes them permanently. The app also deletes a message after three wrong secrets have been entered for it.</li>
+      <li><strong>Invitations.</strong> You may only invite people you know and who would expect to hear from you. You send invitations through your own SMS app. You are responsible for any costs your mobile carrier charges and for complying with laws on unsolicited messages.</li>
+      <li><strong>Law.</strong> You are responsible for complying with the laws that apply to you, including laws on communications, content and the use of encryption.</li>
+    </ul>
+
+    <h3 id="t5">5. Acceptable use</h3>
+    <p>You agree not to use the Service to:</p>
+    <ul>
+      <li>break any law or the rights of others;</li>
+      <li>send or share child sexual abuse material, content that promotes terrorism or violence, threats, harassment, stalking, hate speech or other unlawful content;</li>
+      <li>send spam, bulk or automated messages, scams, phishing or malware, or impersonate another person;</li>
+      <li>attack, probe, overload or disrupt the Service, bypass its limits, guess or enumerate Inbox IDs, or scrape it;</li>
+      <li>reverse engineer, decompile or modify the app, except where mandatory law or an open-source licence allows it;</li>
+      <li>resell the Service or offer it to others as your own service;</li>
+      <li>communicate in emergencies or in situations where a failure or delay could endanger life, health or property. The Service is not suitable for that.</li>
+    </ul>
+
+    <h3 id="t6">6. Messages and content</h3>
+    <p>Message content is encrypted before it leaves your device, and we do not receive the secret. We therefore cannot read, review or moderate messages and we have no duty to monitor them. You alone are responsible for the content you send.</p>
+    <p>We may block Inbox IDs, restrict access or suspend the Service if we reasonably suspect abuse or a breach of these Terms. We may respond to lawful requests from authorities as far as the law requires and as far as it is technically possible. The data we hold is limited (see the Privacy Policy). To report abuse, write to <span class="fill">
+dtgapp24@gmail.com</span>.</p>
+
+    <h3 id="t7">7. No guarantee of security or confidentiality</h3>
+    <p>The Service uses encryption to protect message content, but no system is completely secure and we do not promise that messages remain confidential, unaltered or anonymous. In particular:</p>
+    <ul>
+      <li>a short or guessable secret can be found by anyone who gets hold of the encrypted words, including by trying guesses offline;</li>
+      <li>the relay and our infrastructure providers can see technical metadata, such as Inbox IDs, message times, message sizes and IP addresses, even though they cannot see content;</li>
+      <li>malware, a stolen or unlocked phone, a careless recipient or a screenshot can expose your messages;</li>
+      <li>software can contain errors, and encryption methods can be weakened by future discoveries;</li>
+      <li>the manual tool uses an older format that does not detect tampering as well as the chat does;</li>
+      <li>authorities or other third parties may obtain data from us or from our providers through legal process.</li>
+    </ul>
+    <p>You use the Service at your own risk and should not rely on it to protect information whose disclosure could cause serious harm.</p>
+
+    <h3 id="t8">8. Availability and changes</h3>
+    <p>The Service is provided free of charge and may be interrupted, limited, changed, suspended or discontinued at any time, with or without notice, for example because of technical problems, abuse, or limits of the providers we use. We do not promise that messages are delivered, delivered on time or in order, or kept. Undelivered messages expire. Push notifications depend on Google services and your device settings and may not arrive. We may update the app, change features and limits, and require an update for continued use.</p>
+
+    <h3 id="t9">9. Third-party services</h3>
+    <p>The Service relies on third parties, including Cloudflare (hosting and network), Google (Firebase Cloud Messaging, Android and Google Play) and your mobile carrier and SMS app. Their terms and policies apply to their services. We are not responsible for them or for their failures.</p>
+
+    <h3 id="t10">10. Licence</h3>
+    <p>We grant you a personal, non-exclusive, non-transferable, revocable licence to install and use the app for your own private purposes in line with these Terms. All rights not expressly granted remain with us. The app contains third-party and open-source components that are governed by their own licences. Names and logos belong to their owners. If you send us feedback, we may use it without obligation to you.</p>
+
+    <h3 id="t11">11. Disclaimer of warranties</h3>
+    <p class="caps">To the maximum extent permitted by law, the Service is provided "as is" and "as available", without any warranty of any kind, whether express or implied, including warranties of merchantability, fitness for a particular purpose, non-infringement, accuracy, reliability, security, uninterrupted or error-free operation, or freedom from harmful components.</p>
+    <p>Nothing in this section limits statutory rights that cannot be excluded.</p>
+
+    <h3 id="t12">12. Limitation of liability</h3>
+    <p>To the maximum extent permitted by applicable law, we and our contributors, licensors and service providers are not liable for any indirect, incidental, special, consequential or punitive damages, or for loss of data, messages, profit, revenue, goodwill or business, arising out of or in connection with the Service. This includes loss or damage caused by: unauthorised access to, interception, alteration or disclosure of messages; lost or forgotten secrets; lost, stolen or compromised devices; content sent by you or other users; actions of other users; failures of third-party services; and interruptions, delays or discontinuation of the Service.</p>
+    <p>Subject to the next paragraph, our total liability for all claims relating to the Service is limited to INR 5000 (or the equivalent in your currency), because the Service is free.</p>
+    <p><strong>Mandatory law.</strong> Nothing in these Terms excludes or limits liability that cannot be excluded or limited under applicable law. This includes liability for intent or gross negligence, for fraud, for injury to life, body or health, under mandatory product liability rules, and any rights you have as a consumer under mandatory law. Where the law allows us to limit liability for ordinary negligence only in respect of the breach of essential duties, our liability for ordinary negligence is limited to the foreseeable damage typical for a service of this kind.</p>
+
+    <h3 id="t13">13. Indemnification</h3>
+    <p>To the extent permitted by law, you will indemnify and hold us harmless from claims, losses and costs (including reasonable legal fees) arising out of your content, your use of the Service in breach of these Terms or the law, or your infringement of the rights of others. This does not apply to the extent that mandatory consumer law does not allow it.</p>
+
+    <h3 id="t14">14. Suspension and termination</h3>
+    <p>You can stop using the Service at any time by uninstalling the app. To erase your data first, use Settings, then "Delete all chats &amp; reset my ID". We may suspend or end your access, including by blocking Inbox IDs, at any time, in particular if you breach these Terms or to protect the Service or other people. When access ends, data is handled as described in the Privacy Policy. Provisions that by their nature should continue to apply, such as the disclaimers and limitations of liability, continue to apply.</p>
+
+    <h3 id="t15">15. Changes to these Terms</h3>
+    <p>We may change these Terms, for example to reflect changes to the Service or the law. We will publish the new version on this page and change the date at the top. If you do not agree to a change, stop using the Service. If you keep using it after the change takes effect, the new Terms apply to you, to the extent the law allows this.</p>
+
+    <h3 id="t16">16. Governing law and courts</h3>
+    <p>These Terms are governed by the laws of <span class="fill">India</span>, excluding its conflict-of-law rules and the UN Convention on Contracts for the International Sale of Goods. To the extent the law allows, the courts of <span class="fill">Ranchi</span> have exclusive jurisdiction. If you are a consumer, you keep the protection of the mandatory laws of the country where you live and you may also bring proceedings in the courts there.</p>
+
+    <h3 id="t17">17. General provisions</h3>
+    <ul>
+      <li><strong>Severability.</strong> If a provision is invalid or unenforceable, the rest remains in effect and the provision is replaced by a valid one that comes closest to its purpose.</li>
+      <li><strong>No waiver.</strong> If we do not enforce a right, we do not give it up.</li>
+      <li><strong>Entire agreement.</strong> These Terms and the Privacy Policy are the whole agreement between you and us about the Service.</li>
+      <li><strong>Assignment.</strong> We may transfer our rights and obligations under these Terms to a successor operator of the Service. You may not transfer yours without our consent.</li>
+      <li><strong>Events beyond our control.</strong> We are not responsible for failures caused by events outside our reasonable control, including outages of internet, hosting or power.</li>
+      <li><strong>Language.</strong> If these Terms are translated, the English version prevails as far as the law allows.</li>
+    </ul>
+
+    <h3 id="t18">18. Contact</h3>
+    <p><span class="fill">Saif Hassan</span><br><span class="fill">Vill- Muslim Mohalla Po/PS-Palkot
+Dist-Gumla
+Palkot - 835220
+India (IN)</span><br>Email: <span class="fill">
+dtgapp24@gmail.com</span></p>
+  </section>
+
+  <!-- ===================================================== PRIVACY ===================================================== -->
+  <section id="two">
+    <h2>Privacy Policy</h2>
+
+    <div class="summary">
+      <p><strong>Short version</strong> (the full text below is what counts):</p>
+      <ul>
+        <li>No account, name, email address or phone number is needed to use the app.</li>
+        <li>We cannot read your messages. They are encrypted on your phone with a secret that never reaches our server.</li>
+        <li>Our relay keeps an encrypted message only until your phone confirms it arrived, and for 7 days at most.</li>
+        <li>The app has no advertising, no analytics and no tracking. We do not sell personal data.</li>
+        <li>Our infrastructure providers (Cloudflare and Google) see technical connection data such as your IP address.</li>
+        <li>You can erase your data in the app at any time: Settings, then "Delete all chats &amp; reset my ID".</li>
+      </ul>
+    </div>
+
+    <ol class="toc">
+      <li><a href="#p1">Who is responsible</a></li>
+      <li><a href="#p2">What data we process</a></li>
+      <li><a href="#p3">What we do not collect</a></li>
+      <li><a href="#p4">Contacts, invitations and SMS</a></li>
+      <li><a href="#p5">Permissions and the clipboard</a></li>
+      <li><a href="#p6">Why we process data (legal bases)</a></li>
+      <li><a href="#p7">Who receives data</a></li>
+      <li><a href="#p8">International transfers</a></li>
+      <li><a href="#p9">How long we keep data</a></li>
+      <li><a href="#p10">Your rights</a></li>
+      <li><a href="#p11">Security</a></li>
+      <li><a href="#p12">Children</a></li>
+      <li><a href="#p13">Websites and cookies</a></li>
+      <li><a href="#p14">Other regions</a></li>
+      <li><a href="#p15">Changes to this policy</a></li>
+      <li><a href="#p16">Contact</a></li>
+    </ol>
+
+    <h3 id="p1">1. Who is responsible</h3>
+    <p>The controller for the processing described here is <span class="fill">Saif Hassan</span>, <span class="fill">Vill- Muslim Mohalla Po/PS-Palkot
+Dist-Gumla
+Palkot - 835220
+India (IN)</span>, email <span class="fill">
+dtgapp24@gmail.com</span> (<strong>we</strong>, <strong>us</strong>). This policy explains what personal data the Stealth Messenger app and its relay process, why, and what choices you have.</p>
+
+    <h3 id="p2">2. What data we process</h3>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>Data</th><th>Purpose</th><th>Where</th><th>How long</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Inbox ID</strong> (a random 32-character identifier) and a <strong>hash of your access token</strong></td>
+            <td>Deliver messages to your inbox and check that a request comes from the inbox owner</td>
+            <td>Our relay (Cloudflare)</td>
+            <td>Until you delete your data in the app, or 90 days after the inbox was last used</td>
+          </tr>
+          <tr>
+            <td><strong>Encrypted messages in transit</strong>: the encrypted words, the sender's Inbox ID and a timestamp</td>
+            <td>Forward a message to the recipient's device</td>
+            <td>Our relay (Cloudflare)</td>
+            <td>Deleted when the recipient's device confirms receipt. Otherwise deleted automatically after 7 days</td>
+          </tr>
+          <tr>
+            <td><strong>Push token</strong> (Firebase Cloud Messaging)</td>
+            <td>Wake your phone with a notification that a message is waiting. The push contains no message text</td>
+            <td>Our relay and Google</td>
+            <td>Until it is replaced or becomes invalid, or until the inbox is deleted</td>
+          </tr>
+          <tr>
+            <td><strong>Block list</strong> (Inbox IDs you block)</td>
+            <td>Drop messages from senders you blocked</td>
+            <td>Our relay (Cloudflare)</td>
+            <td>Until you unblock, or until the inbox is deleted</td>
+          </tr>
+          <tr>
+            <td><strong>Last activity date</strong></td>
+            <td>Delete inboxes that are no longer used</td>
+            <td>Our relay (Cloudflare)</td>
+            <td>As long as the inbox exists</td>
+          </tr>
+          <tr>
+            <td><strong>Technical connection data</strong>: IP address, time of the request, request details</td>
+            <td>Operate the connection, protect against abuse, apply rate limits</td>
+            <td>Processed by Cloudflare, and by Google for push. Short-lived counters in the relay's memory</td>
+            <td>Under the providers' own policies. We do not intentionally keep our own request logs but it can be enabled later without any information.</td>
+          </tr>
+          <tr>
+            <td><strong>On your device only</strong>: contacts you add (the name, the phone number of the contact you picked, their Inbox ID), pending invitations, chat history as encrypted words, settings</td>
+            <td>Run the app on your phone</td>
+            <td>Your device</td>
+            <td>Until you delete it or uninstall the app</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The relay does not store your name or any other directly identifying details. An Inbox ID is a pseudonymous identifier. It can still be personal data, because people who know it can link it to you, and we treat it that way.</p>
+
+    <h3 id="p3">3. What we do not collect</h3>
+    <ul>
+      <li>We do not ask for your name, email address or phone number to use the app.</li>
+      <li>We do not receive your secrets or the plaintext of your messages. They stay on your devices.</li>
+      <li>We do not upload your address book, and we do not receive the names or phone numbers of your contacts.</li>
+      <li>We do not collect your location, microphone, camera or files.</li>
+      <li>The app contains no advertising or analytics software and no tracking of your behaviour. We do not sell personal data.</li>
+    </ul>
+
+    <h3 id="p4">4. Contacts, invitations and SMS</h3>
+    <p>To add a contact you pick one person with Android's system contact picker. The app receives only the name and number of the contact you pick. It keeps them on your device and uses the number to address the SMS invitation you send through your own SMS app.</p>
+    <p>The invitation link contains your Inbox ID and a one-time code. The link opens a page hosted by us that offers to open the app. We do not send the SMS ourselves and we do not receive the invitee's phone number. Your mobile carrier transports the SMS under its own terms and may charge you for it. Please make sure the person would expect your invitation.</p>
+    <p>Anyone who knows your Inbox ID, for example through an invitation link you sent, can send messages to your inbox. You can block senders in the app.</p>
+
+    <h3 id="p5">5. Permissions and the clipboard</h3>
+    <ul>
+      <li><strong>Internet access</strong> to reach the relay.</li>
+      <li><strong>Notifications</strong> (Android 13 and later ask for permission). Without it the app cannot alert you. You can change this at any time in Android settings. Notifications never contain message text. By default they do not name the sender.</li>
+      <li><strong>Clipboard.</strong> When you open the Decrypt tab of the manual tool, the app reads the clipboard to paste text for you. The text stays on your device. The wipe button clears the clipboard.</li>
+      <li>The app does not request access to your contacts list, location, camera, microphone or storage.</li>
+    </ul>
+
+    <h3 id="p6">6. Why we process data (legal bases)</h3>
+    <p>If the EU or UK General Data Protection Regulation applies to you, we rely on:</p>
+    <ul>
+      <li><strong>Performance of a contract</strong> (Art. 6(1)(b) GDPR) to deliver messages and notifications, which is what the Service is for;</li>
+      <li><strong>Legitimate interests</strong> (Art. 6(1)(f) GDPR) in keeping the Service secure, preventing abuse and spam, applying rate limits and deleting unused inboxes;</li>
+      <li><strong>Consent</strong> (Art. 6(1)(a) GDPR) where you grant a permission, such as notifications. You can withdraw it in Android settings at any time, without affecting earlier processing;</li>
+      <li><strong>Legal obligation</strong> (Art. 6(1)(c) GDPR) where we must process or disclose data by law.</li>
+    </ul>
+    <p>We do not make decisions about you by automated means that have legal or similarly significant effects.</p>
+
+    <h3 id="p7">7. Who receives data</h3>
+    <ul>
+      <li><strong>Cloudflare</strong> hosts the relay and the invitation page and transports the traffic. See <a href="https://www.cloudflare.com/privacypolicy/" rel="noopener">cloudflare.com/privacypolicy</a>.</li>
+      <li><strong>Google</strong> delivers push notifications through Firebase Cloud Messaging and provides Android and Google Play. Google processes your push token and technical device and app information. See <a href="https://policies.google.com/privacy" rel="noopener">policies.google.com/privacy</a> and <a href="https://firebase.google.com/support/privacy" rel="noopener">firebase.google.com/support/privacy</a>.</li>
+      <li><strong>Your mobile carrier and SMS app</strong> handle the invitations you send.</li>
+      <li><strong>Authorities and other parties</strong> where the law requires us to disclose data or where it is necessary to protect rights, safety or the Service. We cannot hand over message content or secrets, because we do not have them. We could only provide the limited technical data described in section 2.</li>
+      <li>A successor operator, if the Service is transferred, subject to this policy.</li>
+    </ul>
+    <p>We do not sell personal data.</p>
+
+    <h3 id="p8">8. International transfers</h3>
+    <p>Our providers operate globally, so data may be processed in countries outside your own, including the United States. Where this requires safeguards, the providers rely on mechanisms such as the EU Standard Contractual Clauses or the EU-US Data Privacy Framework. Please see their policies linked above.</p>
+
+    <h3 id="p9">9. How long we keep data</h3>
+    <ul>
+      <li><strong>Undelivered messages:</strong> deleted when the receiving device confirms receipt, and automatically after 7 days at the latest. It depends on the settings are our provider too. It can vary or change without any information. Also, these data are handled by providers and they can change the policies without information.</li>
+      <li><strong>Inbox records</strong> (Inbox ID, token hash, push token, block list, last activity date): kept while the inbox is in use. Deleted when you use "Delete all chats &amp; reset my ID" while online, or automatically after 90 days without use.</li>
+      <li><strong>Data on your device:</strong> kept until you delete it or uninstall the app. Uninstalling does not by itself delete the inbox record on the relay. It expires after 90 days of inactivity, or you can delete it first in the app. There is no defined rule and it can change without information or it can behave differently.</li>
+      <li><strong>Connection data</strong> at Cloudflare and Google: according to their policies.</li>
+    </ul>
+
+    <h3 id="p10">10. Your rights</h3>
+    <p>Depending on where you live, you may have the right to access your data, have it corrected or erased, restrict or object to its processing, receive it in a portable format, and withdraw consent. You may also complain to the data protection authority in the country where you live or work, or where you believe a violation happened.</p>
+    <p><strong>Erasing your data yourself:</strong> in the app choose Settings, then "Delete all chats &amp; reset my ID". This deletes your chats and contacts on the phone and your inbox on the relay.</p>
+    <p><strong>Other requests:</strong> write to <span class="fill">
+dtgapp24@gmail.com</span>. Because we do not know who is behind an Inbox ID, we may ask you to prove control of the inbox, for example by sending us your Inbox ID from the Settings screen and performing an action we name in the app. We cannot identify you in any other way, and we cannot look up data we cannot link to you. We will answer within the time required by law.</p>
+
+    <h3 id="p11">11. Security</h3>
+    <p>We use measures that fit the data we hold: message content is encrypted on your device before sending (using a key derived from your secret with PBKDF2 and AES-GCM in the chat); connections to the relay use HTTPS or secure WebSockets; the relay stores only a hash of your access token; your token is kept in storage protected by the Android Keystore; undelivered messages are deleted quickly; and requests are rate-limited.</p>
+    <p>No method of storage or transmission is completely secure, and strong protection depends on you choosing a strong secret and keeping your device safe (see the Terms of Use). If a breach affects your personal data, we will notify the authorities and affected people as the law requires.</p>
+
+    <h3 id="p12">12. Children</h3>
+    <p>The Service is not intended for anyone under 16. We do not knowingly collect personal data from children. If you believe a child has used the Service, contact us and we will help to delete the data.</p>
+
+    <h3 id="p13">13. Websites and cookies</h3>
+    <p>This page and the invitation page are plain pages. They set no cookies, load no third-party resources and run no scripts. The companies that host them may process your IP address when you open them.</p>
+
+    <h3 id="p14">14. Other regions</h3>
+    <p>If you live in a place whose law gives you specific privacy rights (for example certain US states), you may use those rights through the contact details below. We do not sell personal data and we do not share it for cross-context behavioural advertising. We do not knowingly process sensitive personal data about you beyond what you choose to send in encrypted messages, which we cannot read.</p>
+
+    <h3 id="p15">15. Changes to this policy</h3>
+    <p>We may update this policy when the Service or the law changes. We will publish the new version on this page and change the date at the top. For significant changes we will make a reasonable effort to draw attention to them.</p>
+
+    <h3 id="p16">16. Contact</h3>
+    <p><span class="fill">Saif Hassan</span><br><span class="fill">Vill- Muslim Mohalla Po/PS-Palkot
+Dist-Gumla
+Palkot - 835220
+India (IN)</span><br>Email: <span class="fill">
+dtgapp24@gmail.com</span></p>
+<p><span class="fill"> This page is created with the help of AI. It can contains mistakes, typo. We tried to make it accurate. However, there may be some points which may be missing, incorrect etc. Our deepest apologies for the same. Please do flag them out to us if you find any.</span></p>
+  </section>
+</main>
+
+<footer>
+  <p>Stealth Messenger. This page is provided in English. <a href="#one">Terms of Use</a> and <a href="#two">Privacy Policy</a>.</p>
+</footer>
+
+</body>
+</html>
